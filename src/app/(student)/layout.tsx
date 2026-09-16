@@ -5,7 +5,6 @@ import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { resolveBranding } from "@/lib/theme/resolve-brand-color";
 import { buildBrandStyle } from "@/lib/theme/brand-color";
-import { RegisterServiceWorker } from "@/components/pwa/register-sw";
 import { OfflineBanner } from "@/components/pwa/offline-banner";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -31,8 +30,6 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col" style={buildBrandStyle(branding.brandColor)}>
-      <RegisterServiceWorker />
-
       <div className="tf-hairline sticky top-0 z-20 bg-[var(--surface)]/90 backdrop-blur-md">
         <header
           className="flex items-center justify-between px-5 py-4"

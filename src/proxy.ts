@@ -14,6 +14,7 @@ export default auth((req) => {
     const loginUrl = new URL("/login", req.nextUrl.origin);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
+    
   }
 
   // Senha provisória (aluno recém-cadastrado ou reset pelo admin) — trava tudo

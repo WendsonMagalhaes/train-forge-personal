@@ -1,5 +1,8 @@
-const CACHE = "trainforge-v2";
-const SHELL = ["/portal", "/manifest.json"];
+const CACHE = "trainforge-v3";
+// Shell mínimo do app inteiro (login + fallback offline). As áreas do personal
+// (/dashboard), do admin (/admin) e do aluno (/portal) entram no cache
+// dinamicamente conforme o usuário navega — ver fetch handler abaixo.
+const SHELL = ["/login", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
@@ -15,11 +18,20 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// network-first for navigation, falling back to cache when offline
+// network-first pra qualquer navegação (login, dashboard do personal, admin
+// ou portal do aluno) — garante que o que sobe pro ar aparece na hora no PWA.
+// Guarda uma cópia de cada página visitada com sucesso pra funcionar offline
+// depois; se a rede falhar e não tiver essa página em cache, cai no login.
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request).then((r) => r || caches.match("/portal")))
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((r) => r || caches.match("/login")))
     );
   }
 });

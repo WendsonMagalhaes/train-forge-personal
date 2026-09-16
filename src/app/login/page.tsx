@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 import { Logo } from "@/components/layout/logo";
 
@@ -7,6 +9,15 @@ export default async function LoginPage({
   searchParams: Promise<{ callbackUrl?: string; passwordChanged?: string }>;
 }) {
   const { callbackUrl, passwordChanged } = await searchParams;
+
+  // Sessão já válida (ex.: abriu o PWA instalado, que sempre começa em /login)
+  // — manda direto pra área do papel em vez de mostrar o formulário de novo.
+  if (!passwordChanged) {
+    const session = await auth();
+    if (session?.user) {
+      redirect(callbackUrl || (session.user.role === "admin" ? "/admin" : session.user.role === "student" ? "/portal" : "/dashboard"));
+    }
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
