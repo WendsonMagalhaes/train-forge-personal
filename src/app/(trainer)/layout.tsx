@@ -11,6 +11,8 @@ import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Logo } from "@/components/layout/logo";
 import { Avatar } from "@/components/layout/avatar";
+import { UserMenu } from "@/components/layout/user-menu";
+import { logoutAction } from "@/lib/actions/auth";
 import {
   Users, Dumbbell, LineChart, Wallet, CalendarDays, MessageSquare, BarChart3, LogOut, Palette, UserCircle,
 } from "lucide-react";
@@ -123,6 +125,15 @@ export default async function TrainerLayout({ children }: { children: React.Reac
           >
             <Logo logoUrl={branding.logoUrl} sizePct={branding.logoSizePct} positionX={branding.logoPositionX} positionY={branding.logoPositionY} className="h-6 w-auto" />
             <div className="flex items-center gap-2">
+              <UserMenu
+                name={me?.name ?? ""}
+                imageUrl={me?.image}
+                avatarZoomPct={me?.avatarZoomPct}
+                avatarPositionX={me?.avatarPositionX}
+                avatarPositionY={me?.avatarPositionY}
+                profileHref="/dashboard/profile"
+                onSignOut={logoutAction}
+              />
               <NotificationBell />
               <ThemeToggle />
             </div>

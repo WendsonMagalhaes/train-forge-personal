@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn } from "@/lib/auth";
+import { signIn, signOut } from "@/lib/auth";
 import { AuthError } from "next-auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
@@ -26,4 +26,8 @@ export async function loginAction(formData: FormData) {
     }
     throw error;
   }
+}
+
+export async function logoutAction() {
+  await signOut({ redirectTo: "/login" });
 }
