@@ -43,7 +43,13 @@ function suggestNextLoad(lastLoadKg: number | null, lastRpe: number | null, hadP
   return { suggestedLoadKg: next < lastLoadKg ? next : lastLoadKg - 0.5, rationale: "RPE alto na última vez — considere reduzir a carga" };
 }
 
-/** Carrega os blocos/exercícios de UMA ficha específica, com sugestão de carga baseada no histórico do aluno. Compartilhado entre "treino de hoje" e a visão completa de uma ficha. */
+/**
+ * Carrega os blocos/exercícios de UMA ficha específica, com sugestão de carga baseada no histórico do aluno.
+ * Compartilhado entre "treino de hoje" e a visão completa de uma ficha.
+ *
+ * Usa consultas em lote (uma por tipo de dado, com `inArray`) em vez de uma consulta por bloco,
+ * e restringe o histórico aos exercícios desta ficha — antes lia todo o histórico do aluno a cada abertura.
+ */
 async function loadPlanBlocks(studentId: string, planId: string) {
   const blocks = await db
     .select()
@@ -53,20 +59,55 @@ async function loadPlanBlocks(studentId: string, planId: string) {
 
   if (blocks.length === 0) return [];
 
-  // Busca a execução mais recente de cada exercício prescrito (histórico do
-  // aluno, não só desse ciclo) pra basear a sugestão de carga.
-  const history = await db
+  const itemRows = await db
     .select({
-      blockExerciseId: workoutLogExercises.blockExerciseId,
-      loadKg: workoutLogExercises.loadKg,
-      difficultyRpe: workoutLogExercises.difficultyRpe,
-      hadPain: workoutLogExercises.hadPain,
-      performedAt: workoutLogs.performedAt,
+      blockId: workoutBlockExercises.blockId,
+      id: workoutBlockExercises.id,
+      reps: workoutBlockExercises.reps,
+      loadKg: workoutBlockExercises.loadKg,
+      holdSeconds: workoutBlockExercises.holdSeconds,
+      setsDetail: workoutBlockExercises.setsDetail,
+      exerciseId: exercises.id,
+      exerciseName: exercises.name,
+      videoUrl: exercises.videoUrl,
+      imageUrl: exercises.imageUrl,
+      muscleGroup: exercises.muscleGroup,
+      muscleGroupDetail: exercises.muscleGroupDetail,
+      secondaryMuscles: exercises.secondaryMuscles,
+      equipment: exercises.equipment,
+      instructions: exercises.instructions,
     })
-    .from(workoutLogExercises)
-    .innerJoin(workoutLogs, eq(workoutLogs.id, workoutLogExercises.workoutLogId))
-    .where(eq(workoutLogs.studentId, studentId))
-    .orderBy(desc(workoutLogs.performedAt));
+    .from(workoutBlockExercises)
+    .innerJoin(exercises, eq(exercises.id, workoutBlockExercises.exerciseId))
+    .where(inArray(workoutBlockExercises.blockId, blocks.map((b) => b.id)))
+    .orderBy(asc(workoutBlockExercises.orderIndex));
+
+  const blockExerciseIds = itemRows.map((i) => i.id);
+  const exerciseIds = [...new Set(itemRows.map((i) => i.exerciseId))];
+
+  // Execuções mais recentes desses exercícios prescritos (histórico do aluno),
+  // pra basear a sugestão de carga. Só consulta se a ficha tiver exercícios.
+  const [history, substitutesByExercise] = await Promise.all([
+    blockExerciseIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({
+            blockExerciseId: workoutLogExercises.blockExerciseId,
+            loadKg: workoutLogExercises.loadKg,
+            difficultyRpe: workoutLogExercises.difficultyRpe,
+            hadPain: workoutLogExercises.hadPain,
+            performedAt: workoutLogs.performedAt,
+          })
+          .from(workoutLogExercises)
+          .innerJoin(workoutLogs, eq(workoutLogs.id, workoutLogExercises.workoutLogId))
+          .where(and(
+            eq(workoutLogs.studentId, studentId),
+            inArray(workoutLogExercises.blockExerciseId, blockExerciseIds),
+          ))
+          .orderBy(desc(workoutLogs.performedAt)),
+    // Exercícios substitutos cadastrados pelo personal, buscados de uma vez para todos os exercícios.
+    loadSubstitutesFor(exerciseIds),
+  ]);
 
   const lastByExercise = new Map<string, (typeof history)[number]>();
   for (const row of history) {
@@ -76,36 +117,15 @@ async function loadPlanBlocks(studentId: string, planId: string) {
     }
   }
 
-  const blocksWithExercises = [];
-  for (const block of blocks) {
-    const items = await db
-      .select({
-        id: workoutBlockExercises.id,
-        reps: workoutBlockExercises.reps,
-        loadKg: workoutBlockExercises.loadKg,
-        holdSeconds: workoutBlockExercises.holdSeconds,
-        setsDetail: workoutBlockExercises.setsDetail,
-        exerciseId: exercises.id,
-        exerciseName: exercises.name,
-        videoUrl: exercises.videoUrl,
-        imageUrl: exercises.imageUrl,
-        muscleGroup: exercises.muscleGroup,
-        muscleGroupDetail: exercises.muscleGroupDetail,
-        secondaryMuscles: exercises.secondaryMuscles,
-        equipment: exercises.equipment,
-        instructions: exercises.instructions,
-      })
-      .from(workoutBlockExercises)
-      .innerJoin(exercises, eq(exercises.id, workoutBlockExercises.exerciseId))
-      .where(eq(workoutBlockExercises.blockId, block.id))
-      .orderBy(asc(workoutBlockExercises.orderIndex));
+  const itemsByBlock = new Map<string, Array<Omit<(typeof itemRows)[number], "blockId">>>();
+  for (const { blockId, ...item } of itemRows) {
+    if (!itemsByBlock.has(blockId)) itemsByBlock.set(blockId, []);
+    itemsByBlock.get(blockId)!.push(item);
+  }
 
-    // Exercícios substitutos cadastrados pelo personal (mesmos músculos) —
-    // buscados de uma vez pra todos os exercícios do bloco, evitando N+1.
-    const exerciseIds = [...new Set(items.map((i) => i.exerciseId))];
-    const substitutesByExercise = await loadSubstitutesFor(exerciseIds);
-
-    const itemsWithSuggestion = items.map((item) => {
+  return blocks.map((block) => ({
+    ...block,
+    items: (itemsByBlock.get(block.id) ?? []).map((item) => {
       const last = lastByExercise.get(item.id);
       const lastLoadKg = last?.loadKg != null ? Number(last.loadKg) : null;
       const { suggestedLoadKg, rationale } = suggestNextLoad(
@@ -121,12 +141,8 @@ async function loadPlanBlocks(studentId: string, planId: string) {
         loadSuggestionRationale: rationale,
         substitutes: substitutesByExercise.get(item.exerciseId) ?? [],
       };
-    });
-
-    blocksWithExercises.push({ ...block, items: itemsWithSuggestion });
-  }
-
-  return blocksWithExercises;
+    }),
+  }));
 }
 
 /**

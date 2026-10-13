@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, LineChart, CalendarDays, MessageSquare, Salad, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LinkStatusSwap } from "@/components/ui/link-status";
 
 const nav = [
   { href: "/portal", label: "Hoje", icon: Home },
@@ -34,7 +35,9 @@ export function PortalBottomNav() {
               active ? "text-[var(--primary)]" : "text-[var(--muted)]"
             )}
           >
-            <item.icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+            <LinkStatusSwap>
+              <item.icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+            </LinkStatusSwap>
             {item.label}
           </Link>
         );

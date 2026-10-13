@@ -19,10 +19,11 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { Autocomplete, type AutocompleteOption } from "@/components/ui/autocomplete";
 import { useToast } from "@/components/ui/toast";
 import {
-  WEEKDAY_OPTIONS, MUSCLE_GROUP_LABEL, type MuscleGroup,
+  WEEKDAY_OPTIONS, MUSCLE_GROUPS, MUSCLE_GROUP_LABEL, type MuscleGroup,
   SERIES_TYPE_OPTIONS, SERIES_TYPE_LABEL, SERIES_TYPE_EXERCISE_COUNT,
   SERIES_TYPES_WITH_SET_DETAIL, SERIES_TYPES_TIME_BASED, type SeriesType,
 } from "@/lib/constants";
+import { sortPlansByWeekday } from "@/lib/workout-schedule";
 import { Plus, Trash2, Pencil, Dumbbell, GripVertical } from "lucide-react";
 import { WorkoutSummarySidebar } from "./workout-summary-sidebar";
 
@@ -202,7 +203,7 @@ function CycleCard({
       </p>
 
       <div className="flex flex-col gap-4">
-        {cycle.plans.map((plan) => (
+        {sortPlansByWeekday(cycle.plans).map((plan) => (
           <PlanCard key={plan.id} studentId={studentId} plan={plan} exerciseLibrary={exerciseLibrary} onChange={onChange} />
         ))}
         <NewPlanButton studentId={studentId} cycleId={cycle.id} onDone={onChange} />
@@ -226,12 +227,23 @@ function NewPlanButton({ studentId, cycleId, onDone }: { studentId: string; cycl
   );
 }
 
+const MUSCLE_OPTIONS = MUSCLE_GROUPS.map((m) => ({ value: m, label: MUSCLE_GROUP_LABEL[m] }));
+
 function NewPlanForm({ studentId, cycleId, onSuccess }: { studentId: string; cycleId: string; onSuccess: () => void }) {
   const { toast } = useToast();
   const [state, formAction, pending] = useActionState<FormState | undefined, FormData>(
     async (_prev, formData) => (await createPlan(studentId, cycleId, formData)) ?? {},
     undefined
   );
+  const [muscles, setMuscles] = useState<string[]>([]);
+  const [label, setLabel] = useState("");
+
+  // Os músculos escolhidos viram o nome da ficha (ex: "Peito/Tríceps"), que continua editável.
+  function handleMusclesChange(next: string[]) {
+    setMuscles(next);
+    setLabel(next.map((m) => MUSCLE_GROUP_LABEL[m as MuscleGroup]).join("/"));
+  }
+
   useEffect(() => {
     if (state?.success) { toast({ variant: "success", description: "Ficha criada." }); onSuccess(); }
     else if (state?.error) toast({ variant: "error", description: state.error });
@@ -241,8 +253,21 @@ function NewPlanForm({ studentId, cycleId, onSuccess }: { studentId: string; cyc
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div>
+        <Label>Músculos</Label>
+        <MultiSelect
+          options={MUSCLE_OPTIONS}
+          value={muscles}
+          onChange={handleMusclesChange}
+          placeholder="Selecione os músculos"
+        />
+      </div>
+      <div>
         <Label htmlFor="label">Nome da ficha</Label>
-        <Input id="label" name="label" placeholder="Treino A — Peito/Tríceps" required />
+        <Input
+          id="label" name="label" value={label} onChange={(e) => setLabel(e.target.value)}
+          placeholder="Ex: Peito/Tríceps ou Treino A" required
+        />
+        <p className="mt-1 text-xs text-[var(--muted)]">Preenchido com os músculos escolhidos; pode ser editado.</p>
       </div>
       <div>
         <Label>Dias da semana</Label>

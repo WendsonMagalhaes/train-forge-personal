@@ -4,23 +4,20 @@ import Link from "next/link";
 import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Dumbbell } from "lucide-react";
+import { expandPlansBySchedule, parseWeekdays } from "@/lib/workout-schedule";
 
 const WEEKDAY_LABEL: Record<string, string> = {
   sun: "Dom", mon: "Seg", tue: "Ter", wed: "Qua", thu: "Qui", fri: "Sex", sat: "Sáb",
 };
-const WEEKDAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const TODAY_CODE = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][new Date().getDay()];
 
 type Cycle = { id: string; name: string; goal: string | null; startDate: string; endDate: string | null };
 type Plan = { id: string; label: string; weekdays: string | null; orderIndex: number | null; exerciseCount: number };
 
-function formatWeekdays(weekdays: string | null) {
-  if (!weekdays) return [];
-  const codes = weekdays.split(",").map((c) => c.trim()).filter(Boolean);
-  return WEEKDAY_ORDER.filter((code) => codes.includes(code));
-}
-
 export function MyWorkoutsClient({ cycle, plans }: { cycle: Cycle; plans: Plan[] }) {
+  // Agenda da semana (Seg → Dom): ficha com mais de um dia aparece em cada um deles.
+  const entries = expandPlansBySchedule(plans);
+
   return (
     <div className="space-y-4">
       <div>
@@ -37,14 +34,14 @@ export function MyWorkoutsClient({ cycle, plans }: { cycle: Cycle; plans: Plan[]
         </Panel>
       ) : (
         <div className="space-y-3">
-          {plans.map((plan) => {
-            const days = formatWeekdays(plan.weekdays);
-            const isToday = (plan.weekdays ?? "").split(",").map((c) => c.trim()).includes(TODAY_CODE);
+          {entries.map(({ plan, weekday }, i) => {
+            const days = parseWeekdays(plan.weekdays);
+            const isToday = weekday === TODAY_CODE;
             return (
-              <Link key={plan.id} href={`/portal/workouts/${plan.id}`}>
+              <Link key={`${plan.id}-${weekday ?? "sem-dia"}-${i}`} href={`/portal/workouts/${plan.id}`}>
                 <Panel className="flex items-center gap-3 transition-colors hover:border-[var(--primary)]">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/15 text-[var(--primary)]">
-                    <Dumbbell className="h-4 w-4" />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/15 text-xs font-medium text-[var(--primary)]">
+                    {weekday ? WEEKDAY_LABEL[weekday] : <Dumbbell className="h-4 w-4" />}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">

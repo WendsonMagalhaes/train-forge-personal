@@ -8,14 +8,20 @@ export function MultiSelect({
   name,
   options,
   defaultValue = [],
+  value,
+  onChange,
   placeholder = "Selecione uma ou mais opções",
 }: {
-  name: string;
+  name?: string;
   options: { label: string; value: string }[];
   defaultValue?: string[];
+  /** Modo controlado: quando informado, o componente usa este valor em vez de estado interno. */
+  value?: string[];
+  onChange?: (next: string[]) => void;
   placeholder?: string;
 }) {
-  const [selected, setSelected] = useState<string[]>(defaultValue);
+  const [internal, setInternal] = useState<string[]>(defaultValue);
+  const selected = value ?? internal;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -27,8 +33,10 @@ export function MultiSelect({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  function toggle(value: string) {
-    setSelected((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+  function toggle(item: string) {
+    const next = selected.includes(item) ? selected.filter((v) => v !== item) : [...selected, item];
+    if (value === undefined) setInternal(next);
+    onChange?.(next);
   }
 
   const selectedLabels = options.filter((o) => selected.includes(o.value)).map((o) => o.label);
@@ -36,7 +44,7 @@ export function MultiSelect({
   return (
     <div ref={ref} className="relative">
       {/* inputs escondidos com o mesmo `name` — FormData.getAll(name) captura todos */}
-      {selected.map((v) => (
+      {name && selected.map((v) => (
         <input key={v} type="hidden" name={name} value={v} />
       ))}
 

@@ -92,45 +92,52 @@ const planSchema = z.object({
 
 export async function listPlansWithExercises(cycleId: string) {
   const plans = await db.select().from(workoutPlans).where(eq(workoutPlans.cycleId, cycleId)).orderBy(asc(workoutPlans.orderIndex));
+  if (plans.length === 0) return [];
 
-  const result = [];
-  for (const plan of plans) {
-    const blocks = await db
-      .select()
-      .from(workoutBlocks)
-      .where(eq(workoutBlocks.planId, plan.id))
-      .orderBy(asc(workoutBlocks.orderIndex));
+  // Consultas em lote (uma para blocos e uma para exercícios de todos os blocos do ciclo),
+  // em vez de uma consulta por ficha e por bloco.
+  const blocks = await db
+    .select()
+    .from(workoutBlocks)
+    .where(inArray(workoutBlocks.planId, plans.map((p) => p.id)))
+    .orderBy(asc(workoutBlocks.orderIndex));
 
-    const blocksWithExercises = [];
-    for (const block of blocks) {
-      const blockExercises = await db
-        .select({
-          id: workoutBlockExercises.id,
-          orderIndex: workoutBlockExercises.orderIndex,
-          reps: workoutBlockExercises.reps,
-          loadKg: workoutBlockExercises.loadKg,
-          tempo: workoutBlockExercises.tempo,
-          holdSeconds: workoutBlockExercises.holdSeconds,
-          notes: workoutBlockExercises.notes,
-          setsDetail: workoutBlockExercises.setsDetail,
-          exerciseId: exercises.id,
-          exerciseName: exercises.name,
-          muscleGroup: exercises.muscleGroup,
-          muscleGroupDetail: exercises.muscleGroupDetail,
-          imageUrl: exercises.imageUrl,
-          videoUrl: exercises.videoUrl,
-        })
-        .from(workoutBlockExercises)
-        .innerJoin(exercises, eq(exercises.id, workoutBlockExercises.exerciseId))
-        .where(eq(workoutBlockExercises.blockId, block.id))
-        .orderBy(asc(workoutBlockExercises.orderIndex));
+  const blockExercises = blocks.length === 0 ? [] : await db
+    .select({
+      blockId: workoutBlockExercises.blockId,
+      id: workoutBlockExercises.id,
+      orderIndex: workoutBlockExercises.orderIndex,
+      reps: workoutBlockExercises.reps,
+      loadKg: workoutBlockExercises.loadKg,
+      tempo: workoutBlockExercises.tempo,
+      holdSeconds: workoutBlockExercises.holdSeconds,
+      notes: workoutBlockExercises.notes,
+      setsDetail: workoutBlockExercises.setsDetail,
+      exerciseId: exercises.id,
+      exerciseName: exercises.name,
+      muscleGroup: exercises.muscleGroup,
+      muscleGroupDetail: exercises.muscleGroupDetail,
+      imageUrl: exercises.imageUrl,
+      videoUrl: exercises.videoUrl,
+    })
+    .from(workoutBlockExercises)
+    .innerJoin(exercises, eq(exercises.id, workoutBlockExercises.exerciseId))
+    .where(inArray(workoutBlockExercises.blockId, blocks.map((b) => b.id)))
+    .orderBy(asc(workoutBlockExercises.orderIndex));
 
-      blocksWithExercises.push({ ...block, exercises: blockExercises });
-    }
-
-    result.push({ ...plan, blocks: blocksWithExercises });
+  const exercisesByBlock = new Map<string, Array<Omit<(typeof blockExercises)[number], "blockId">>>();
+  for (const { blockId, ...item } of blockExercises) {
+    if (!exercisesByBlock.has(blockId)) exercisesByBlock.set(blockId, []);
+    exercisesByBlock.get(blockId)!.push(item);
   }
-  return result;
+
+  const blocksByPlan = new Map<string, Array<(typeof blocks)[number] & { exercises: Array<Omit<(typeof blockExercises)[number], "blockId">> }>>();
+  for (const block of blocks) {
+    if (!blocksByPlan.has(block.planId)) blocksByPlan.set(block.planId, []);
+    blocksByPlan.get(block.planId)!.push({ ...block, exercises: exercisesByBlock.get(block.id) ?? [] });
+  }
+
+  return plans.map((plan) => ({ ...plan, blocks: blocksByPlan.get(plan.id) ?? [] }));
 }
 
 export async function createPlan(studentId: string, cycleId: string, formData: FormData) {

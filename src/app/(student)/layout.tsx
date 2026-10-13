@@ -14,19 +14,22 @@ import { logoutAction } from "@/lib/actions/auth";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  const branding = await resolveBranding(session);
-  // busca direto no banco (não da sessão/JWT) pra sempre refletir a foto mais recente
-  const [me] = await db
-    .select({
-      name: users.name,
-      image: users.image,
-      avatarZoomPct: users.avatarZoomPct,
-      avatarPositionX: users.avatarPositionX,
-      avatarPositionY: users.avatarPositionY,
-    })
-    .from(users)
-    .where(eq(users.id, session!.user.id))
-    .limit(1);
+  // branding e dados do usuário são independentes: busca em paralelo
+  // (o dado do usuário vai direto no banco, não da sessão/JWT, pra sempre refletir a foto mais recente)
+  const [branding, [me]] = await Promise.all([
+    resolveBranding(session),
+    db
+      .select({
+        name: users.name,
+        image: users.image,
+        avatarZoomPct: users.avatarZoomPct,
+        avatarPositionX: users.avatarPositionX,
+        avatarPositionY: users.avatarPositionY,
+      })
+      .from(users)
+      .where(eq(users.id, session!.user.id))
+      .limit(1),
+  ]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col" style={buildBrandStyle(branding.brandColor)}>

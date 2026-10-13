@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LinkStatusSwap } from "@/components/ui/link-status";
 
 export type AppNavItem = {
   href: string;
@@ -66,7 +67,7 @@ export function AppBottomNav({
                 active ? "text-[var(--primary)]" : "text-[var(--muted)]"
               )}
             >
-              {item.icon}
+              <LinkStatusSwap>{item.icon}</LinkStatusSwap>
               {item.label}
             </Link>
           );
@@ -112,7 +113,7 @@ export function AppBottomNav({
                       active ? "bg-[var(--background)] text-[var(--primary)]" : "text-[var(--foreground)]"
                     )}
                   >
-                    {item.icon}
+                    <LinkStatusSwap>{item.icon}</LinkStatusSwap>
                     {item.label}
                   </Link>
                 );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { LinkPendingSpinner } from "@/components/ui/link-status";
 
 export function StudentTabs({ studentId }: { studentId: string }) {
   const pathname = usePathname();
@@ -34,6 +35,7 @@ export function StudentTabs({ studentId }: { studentId: string }) {
                 : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
             )}
           >
+            <LinkPendingSpinner className="mr-1.5 inline-block align-[-2px]" />
             {tab.label}
           </Link>
         );
