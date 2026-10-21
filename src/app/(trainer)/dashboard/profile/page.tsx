@@ -39,6 +39,7 @@ export default async function ProfilePage() {
         </p>
         <LogoForm
           currentLogoUrl={me.logoUrl}
+          currentLogoDarkUrl={me.logoDarkUrl}
           currentSizePct={me.logoSizePct}
           currentPositionX={me.logoPositionX}
           currentPositionY={me.logoPositionY}

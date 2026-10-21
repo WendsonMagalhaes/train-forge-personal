@@ -38,7 +38,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
           className="flex items-center justify-between px-5 py-4"
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
         >
-          <Logo logoUrl={branding.logoUrl} sizePct={branding.logoSizePct} positionX={branding.logoPositionX} positionY={branding.logoPositionY} className="h-5 w-auto" />
+          <Logo logoUrl={branding.logoUrl} logoDarkUrl={branding.logoDarkUrl} sizePct={branding.logoSizePct} positionX={branding.logoPositionX} positionY={branding.logoPositionY} className="h-5 w-auto" />
           <div className="flex items-center gap-2">
             <UserMenu
               name={me?.name ?? ""}

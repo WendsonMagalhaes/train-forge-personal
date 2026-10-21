@@ -74,7 +74,7 @@ export function Dialog({
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="shrink-0 text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                className="tf-tap -m-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
                 aria-label="Fechar"
               >
                 <X className="h-5 w-5" />

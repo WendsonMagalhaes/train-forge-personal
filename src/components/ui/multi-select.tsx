@@ -60,7 +60,9 @@ export function MultiSelect({
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] p-1 shadow-lg">
+        // No celular a lista entra no fluxo da página (não flutua sobre o modal, onde era cortada);
+        // a partir de sm volta a ser um dropdown flutuante.
+        <div className="relative z-20 mt-1 max-h-64 w-full overflow-y-auto overscroll-contain rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] p-1 shadow-lg sm:absolute sm:max-h-56">
           {options.map((opt) => {
             const active = selected.includes(opt.value);
             return (
@@ -69,7 +71,7 @@ export function MultiSelect({
                 key={opt.value}
                 onClick={() => toggle(opt.value)}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-[3px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-[var(--background)]",
+                  "flex min-h-10 w-full items-center justify-between rounded-[3px] px-2 py-2 text-left text-sm transition-colors hover:bg-[var(--background)] sm:min-h-0 sm:py-1.5",
                   active && "text-[var(--primary)]"
                 )}
               >

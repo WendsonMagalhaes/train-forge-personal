@@ -19,7 +19,10 @@ export const users = pgTable("users", {
   // sistema — dashboard do próprio personal E o portal dos alunos dele.
   // Null = usa o ember padrão do Train Forge.
   brandColor: text("brand_color"),
+  // Logo para o tema claro (fundo claro). Se logoDarkUrl estiver vazio, esta é usada nos dois temas.
   logoUrl: text("logo_url"),
+  // Logo para o tema escuro (fundo escuro). Opcional — pode ser gerada automaticamente a partir da clara.
+  logoDarkUrl: text("logo_dark_url"),
   // Tamanho (%, 50-300, 100 = padrão) e posição (%, 0-100 cada eixo) de exibição
   // da logo — controla o "zoom"/enquadramento dela dentro da caixa onde aparece
   // (sidebar, topo do portal do aluno etc.), pra corrigir logos que renderizam

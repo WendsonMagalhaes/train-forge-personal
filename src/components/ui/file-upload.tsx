@@ -26,6 +26,8 @@ export function FileUpload({
     kind,
     accept,
     defaultValue,
+    value,
+    compact = false,
     preview = "none",
     onChange,
 }: {
@@ -34,18 +36,23 @@ export function FileUpload({
     kind: UploadKind;
     accept: string;
     defaultValue?: string | null;
+    /** Modo controlado: quando informado, a URL vem de fora (ex.: após processar a imagem). */
+    value?: string | null;
+    /** Versão enxuta: só botões (Enviar/Trocar/Remover), sem rótulo, URL nem campo de link. O preview fica com quem usa. */
+    compact?: boolean;
     preview?: "image" | "video" | "none";
     /** Chamado sempre que a URL final muda (upload concluído, link colado ou removido). */
     onChange?: (url: string) => void;
 }) {
     const { toast } = useToast();
     const inputRef = useRef<HTMLInputElement>(null);
-    const [url, setUrlState] = useState(defaultValue ?? "");
+    const [urlState, setUrlState] = useState(defaultValue ?? "");
+    const url = value !== undefined ? value ?? "" : urlState;
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
 
     function setUrl(next: string) {
-        setUrlState(next);
+        if (value === undefined) setUrlState(next);
         onChange?.(next);
     }
 
@@ -70,6 +77,44 @@ export function FileUpload({
             setUploading(false);
             if (inputRef.current) inputRef.current.value = "";
         }
+    }
+
+    if (compact) {
+        return (
+            <div>
+                <input type="hidden" name={name} value={url} />
+                <input
+                    ref={inputRef}
+                    type="file"
+                    accept={accept}
+                    onChange={(e) => handleFile(e.target.files?.[0])}
+                    className="hidden"
+                    aria-label={label}
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" variant="secondary" size="sm" disabled={uploading} onClick={() => inputRef.current?.click()}>
+                        {uploading ? (
+                            <>
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" /> {progress}%
+                            </>
+                        ) : (
+                            <>
+                                <Upload className="h-3.5 w-3.5" /> {url ? "Trocar" : "Enviar"}
+                            </>
+                        )}
+                    </Button>
+                    {url && (
+                        <button
+                            type="button"
+                            onClick={() => setUrl("")}
+                            className="inline-flex h-8 items-center gap-1 px-1 text-xs text-[var(--muted)] hover:text-red-500"
+                        >
+                            <X className="h-3.5 w-3.5" /> Remover
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
     }
 
     return (

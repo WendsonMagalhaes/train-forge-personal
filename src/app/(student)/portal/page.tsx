@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { getTodayWorkout } from "@/lib/actions/student-workout";
-import { TodayWorkoutClient } from "./today-workout-client";
+import { listMyWorkoutPlans, getWorkoutPlanDetail } from "@/lib/actions/student-workout";
+import { WeekWorkoutClient } from "./week-workout-client";
 import { Panel } from "@/components/ui/panel";
 import { Dumbbell, ChevronRight } from "lucide-react";
 
 export default async function StudentTodayPage() {
-  const { cycle, plan, blocks } = await getTodayWorkout();
+  const { cycle, plans } = await listMyWorkoutPlans();
 
   if (!cycle) {
     return (
@@ -16,24 +16,27 @@ export default async function StudentTodayPage() {
     );
   }
 
-  if (!plan) {
+  if (plans.length === 0) {
     return (
       <div className="space-y-4">
         <Panel className="text-center">
-          <p className="font-medium">Hoje é dia de descanso 🧘</p>
-          <p className="text-sm text-[var(--muted)] mt-1">Nenhum treino programado para hoje.</p>
+          <p className="font-medium">Nenhuma ficha cadastrada</p>
+          <p className="text-sm text-[var(--muted)] mt-1">Seu personal ainda não montou as fichas do ciclo.</p>
         </Panel>
-        <MyWorkoutsLink />
       </div>
     );
   }
 
+  // Carrega os exercícios de todas as fichas de uma vez: trocar de dia na faixa semanal fica instantâneo.
+  const details = await Promise.all(plans.map((p) => getWorkoutPlanDetail(p.id)));
+  const blocksByPlan = Object.fromEntries(plans.map((p, i) => [p.id, details[i].blocks]));
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="font-display text-xl">Treino de hoje</h1>
-      </div>
-      <TodayWorkoutClient planId={plan.id} blocks={blocks} />
+      <WeekWorkoutClient
+        plans={plans.map((p) => ({ id: p.id, label: p.label, weekdays: p.weekdays }))}
+        blocksByPlan={blocksByPlan}
+      />
       <MyWorkoutsLink />
     </div>
   );

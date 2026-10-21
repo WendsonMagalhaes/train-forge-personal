@@ -15,6 +15,13 @@
       "when": 1789332834634,
       "tag": "0001_spicy_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792622044475,
+      "tag": "0002_logo_dark_url",
+      "breakpoints": true
     }
   ]
 }

@@ -67,7 +67,7 @@ export default async function TrainerLayout({ children }: { children: React.Reac
       {/* Sidebar — visível a partir de md (tablet/desktop) */}
       <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--surface)] p-5 md:flex md:flex-col">
         <div className="mb-8">
-          <Logo logoUrl={branding.logoUrl} sizePct={branding.logoSizePct} positionX={branding.logoPositionX} positionY={branding.logoPositionY} className="h-7 w-auto" />
+          <Logo logoUrl={branding.logoUrl} logoDarkUrl={branding.logoDarkUrl} sizePct={branding.logoSizePct} positionX={branding.logoPositionX} positionY={branding.logoPositionY} className="h-7 w-auto" />
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {nav.map((item) => (
@@ -123,7 +123,7 @@ export default async function TrainerLayout({ children }: { children: React.Reac
             className="flex items-center justify-between px-4 py-3"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
           >
-            <Logo logoUrl={branding.logoUrl} sizePct={branding.logoSizePct} positionX={branding.logoPositionX} positionY={branding.logoPositionY} className="h-6 w-auto" />
+            <Logo logoUrl={branding.logoUrl} logoDarkUrl={branding.logoDarkUrl} sizePct={branding.logoSizePct} positionX={branding.logoPositionX} positionY={branding.logoPositionY} className="h-6 w-auto" />
             <div className="flex items-center gap-2">
               <UserMenu
                 name={me?.name ?? ""}

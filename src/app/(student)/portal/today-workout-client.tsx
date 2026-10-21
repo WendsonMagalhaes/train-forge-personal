@@ -50,7 +50,7 @@ type Item = {
   substitutes?: SubstituteExercise[];
 };
 
-type Block = {
+export type Block = {
   id: string;
   seriesType: SeriesType;
   rounds: number;

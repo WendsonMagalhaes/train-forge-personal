@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
-import { MultiSelect } from "@/components/ui/multi-select";
+import { ChipMultiSelect } from "@/components/ui/chip-select";
 import { Autocomplete, type AutocompleteOption } from "@/components/ui/autocomplete";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -24,7 +24,7 @@ import {
   SERIES_TYPES_WITH_SET_DETAIL, SERIES_TYPES_TIME_BASED, type SeriesType,
 } from "@/lib/constants";
 import { sortPlansByWeekday } from "@/lib/workout-schedule";
-import { Plus, Trash2, Pencil, Dumbbell, GripVertical } from "lucide-react";
+import { Plus, Trash2, Pencil, Dumbbell, GripVertical, X } from "lucide-react";
 import { WorkoutSummarySidebar } from "./workout-summary-sidebar";
 
 type FormState = { error?: string; success?: boolean };
@@ -191,7 +191,7 @@ function CycleCard({
           )}
           <ConfirmDeleteButton
             itemLabel={cycle.name}
-            trigger={<button className="text-[var(--muted)] hover:text-red-500" type="button"><Trash2 className="h-4 w-4" /></button>}
+            trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>}
             onConfirm={async () => { await deleteCycle(studentId, cycle.id); onChange(); }}
           />
         </div>
@@ -235,13 +235,40 @@ function NewPlanForm({ studentId, cycleId, onSuccess }: { studentId: string; cyc
     async (_prev, formData) => (await createPlan(studentId, cycleId, formData)) ?? {},
     undefined
   );
-  const [muscles, setMuscles] = useState<string[]>([]);
+  const [muscles, setMuscles] = useState<string[]>([]);          // grupos do catálogo
+  const [customMuscles, setCustomMuscles] = useState<string[]>([]); // grupos digitados pelo personal
+  const [customInput, setCustomInput] = useState("");
+  const [weekdays, setWeekdays] = useState<string[]>([]);
   const [label, setLabel] = useState("");
+  const [labelEdited, setLabelEdited] = useState(false);
 
-  // Os músculos escolhidos viram o nome da ficha (ex: "Peito/Tríceps"), que continua editável.
-  function handleMusclesChange(next: string[]) {
+  // Os grupos escolhidos viram o nome da ficha (ex: "Peito/Tríceps").
+  // Depois que o personal edita o nome manualmente, paramos de sobrescrevê-lo.
+  function buildLabel(presets: string[], custom: string[]) {
+    return [...presets.map((m) => MUSCLE_GROUP_LABEL[m as MuscleGroup]), ...custom].join("/");
+  }
+
+  function updateMuscles(next: string[]) {
     setMuscles(next);
-    setLabel(next.map((m) => MUSCLE_GROUP_LABEL[m as MuscleGroup]).join("/"));
+    if (!labelEdited) setLabel(buildLabel(next, customMuscles));
+  }
+
+  function addCustomMuscle() {
+    const name = customInput.trim();
+    if (!name) return;
+    setCustomInput("");
+    const alreadyExists = [...MUSCLE_OPTIONS.map((o) => o.label), ...customMuscles]
+      .some((n) => n.toLowerCase() === name.toLowerCase());
+    if (alreadyExists) return;
+    const next = [...customMuscles, name];
+    setCustomMuscles(next);
+    if (!labelEdited) setLabel(buildLabel(muscles, next));
+  }
+
+  function removeCustomMuscle(name: string) {
+    const next = customMuscles.filter((n) => n !== name);
+    setCustomMuscles(next);
+    if (!labelEdited) setLabel(buildLabel(muscles, next));
   }
 
   useEffect(() => {
@@ -251,30 +278,77 @@ function NewPlanForm({ studentId, cycleId, onSuccess }: { studentId: string; cyc
   }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-5">
       <div>
         <Label>Músculos</Label>
-        <MultiSelect
+        <ChipMultiSelect
+          ariaLabel="Músculos"
           options={MUSCLE_OPTIONS}
           value={muscles}
-          onChange={handleMusclesChange}
-          placeholder="Selecione os músculos"
+          onChange={updateMuscles}
         />
+
+        {/* Grupos digitados à mão — entram no nome da ficha, como os do catálogo */}
+        <div className="mt-3 flex gap-2">
+          <Input
+            value={customInput}
+            onChange={(e) => setCustomInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomMuscle(); } }}
+            placeholder="Outro grupo (ex: Antebraço)"
+            enterKeyHint="done"
+            className="h-10"
+          />
+          <Button type="button" variant="secondary" onClick={addCustomMuscle} disabled={!customInput.trim()} className="h-10 shrink-0 px-3">
+            <Plus className="h-4 w-4" /> Adicionar
+          </Button>
+        </div>
+
+        {customMuscles.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {customMuscles.map((name) => (
+              <span
+                key={name}
+                className="flex min-h-9 items-center gap-1 rounded-[var(--radius)] border border-[var(--primary)] bg-[var(--background)] pl-2.5 pr-1 text-sm"
+              >
+                {name}
+                <button
+                  type="button"
+                  onClick={() => removeCustomMuscle(name)}
+                  aria-label={`Remover ${name}`}
+                  className="tf-tap flex h-7 w-7 items-center justify-center text-[var(--muted)] hover:text-red-500"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
+
       <div>
         <Label htmlFor="label">Nome da ficha</Label>
         <Input
-          id="label" name="label" value={label} onChange={(e) => setLabel(e.target.value)}
+          id="label" name="label" value={label}
+          onChange={(e) => { setLabel(e.target.value); setLabelEdited(true); }}
           placeholder="Ex: Peito/Tríceps ou Treino A" required
         />
         <p className="mt-1 text-xs text-[var(--muted)]">Preenchido com os músculos escolhidos; pode ser editado.</p>
       </div>
+
       <div>
         <Label>Dias da semana</Label>
-        <MultiSelect name="weekdays" options={WEEKDAY_OPTIONS} placeholder="Selecione os dias" />
+        <ChipMultiSelect
+          name="weekdays"
+          ariaLabel="Dias da semana"
+          options={WEEKDAY_OPTIONS}
+          value={weekdays}
+          onChange={setWeekdays}
+          className="grid grid-cols-4 gap-2 sm:grid-cols-7"
+        />
       </div>
+
       <div className="flex justify-end pt-1">
-        <Button type="submit" disabled={pending}>{pending ? "Criando…" : "Criar ficha"}</Button>
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">{pending ? "Criando…" : "Criar ficha"}</Button>
       </div>
     </form>
   );
@@ -311,7 +385,7 @@ function PlanCard({
         </div>
         <ConfirmDeleteButton
           itemLabel={plan.label}
-          trigger={<button className="text-[var(--muted)] hover:text-red-500" type="button"><Trash2 className="h-4 w-4" /></button>}
+          trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>}
           onConfirm={async () => { await deletePlan(studentId, plan.id); onChange(); }}
         />
       </div>
@@ -365,7 +439,7 @@ function BlockRow({
           <EditBlockButton studentId={studentId} block={block} onChange={onChange} />
           <ConfirmDeleteButton
             itemLabel={SERIES_TYPE_LABEL[block.seriesType]}
-            trigger={<button className="text-[var(--muted)] hover:text-red-500" type="button"><Trash2 className="h-3.5 w-3.5" /></button>}
+            trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir bloco"><Trash2 className="h-4 w-4" /></button>}
             onConfirm={async () => { await deleteBlock(studentId, block.id); onChange(); }}
           />
         </div>
@@ -386,14 +460,35 @@ function BlockRow({
                 {ex.setsDetail && ex.setsDetail.length > 0 ? ` · ${ex.setsDetail.length} séries detalhadas` : ""}
               </p>
             </div>
-            {block.exercises.length > min && (
+            {/* Sempre visível. Quando o bloco já está no mínimo de exercícios (ex.: série simples),
+                excluir o exercício significaria esvaziar o bloco — então o botão exclui o bloco inteiro, com confirmação. */}
+            {block.exercises.length > min ? (
               <button
                 type="button"
-                className="shrink-0 text-[var(--muted)] hover:text-red-500"
+                title="Remover exercício"
+                aria-label={`Remover ${ex.exerciseName} do bloco`}
+                className="tf-tap flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500"
                 onClick={async () => { await removeBlockExercise(studentId, ex.id); onChange(); }}
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </button>
+            ) : (
+              <ConfirmDeleteButton
+                itemLabel={`o bloco "${SERIES_TYPE_LABEL[block.seriesType]}"`}
+                title="Excluir bloco"
+                successMessage="Bloco excluído."
+                trigger={
+                  <button
+                    type="button"
+                    title="Excluir bloco"
+                    aria-label="Excluir bloco"
+                    className="tf-tap flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                }
+                onConfirm={async () => { await deleteBlock(studentId, block.id); onChange(); }}
+              />
             )}
           </div>
         ))}
@@ -440,7 +535,7 @@ function EditBlockButton({
     <Dialog
       title="Editar bloco"
       description={SERIES_TYPE_LABEL[block.seriesType]}
-      trigger={<button className="text-[var(--muted)] hover:text-[var(--primary)]" type="button"><Pencil className="h-3.5 w-3.5" /></button>}
+      trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--primary)]" type="button" aria-label="Editar bloco"><Pencil className="h-4 w-4" /></button>}
       open={open}
       onOpenChange={setOpen}
     >
@@ -661,13 +756,13 @@ function AddBlockForm({
           </div>
           <div className="flex flex-col gap-2">
             {setsRows.map((row, i) => (
-              <div key={i} className="flex items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] p-2">
+              <div key={i} className="flex flex-wrap items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] p-2">
                 <span className="w-5 shrink-0 text-center text-xs text-[var(--muted)]">{row.setNumber}</span>
                 <Input
                   placeholder="Rótulo (opcional)"
                   value={row.label}
                   onChange={(e) => updateSetRow(i, { label: e.target.value })}
-                  className="h-8 text-xs"
+                  className="h-9 min-w-[7rem] flex-1 text-xs"
                 />
                 {isTimeBased ? (
                   <Input
@@ -742,7 +837,7 @@ function AddBlockForm({
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       <div className="flex justify-end pt-1">
-        <Button type="button" onClick={submit} disabled={pending}>
+        <Button type="button" onClick={submit} disabled={pending} className="w-full sm:w-auto">
           {pending ? "Adicionando…" : "Adicionar bloco"}
         </Button>
       </div>

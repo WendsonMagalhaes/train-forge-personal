@@ -6,6 +6,7 @@ import type { Session } from "next-auth";
 export type Branding = {
   brandColor: string | null;
   logoUrl: string | null;
+  logoDarkUrl: string | null;
   logoSizePct: number;
   logoPositionX: number;
   logoPositionY: number;
@@ -14,6 +15,7 @@ export type Branding = {
 const EMPTY_BRANDING: Branding = {
   brandColor: null,
   logoUrl: null,
+  logoDarkUrl: null,
   logoSizePct: 100,
   logoPositionX: 50,
   logoPositionY: 50,
@@ -22,6 +24,7 @@ const EMPTY_BRANDING: Branding = {
 const BRANDING_COLUMNS = {
   brandColor: users.brandColor,
   logoUrl: users.logoUrl,
+  logoDarkUrl: users.logoDarkUrl,
   logoSizePct: users.logoSizePct,
   logoPositionX: users.logoPositionX,
   logoPositionY: users.logoPositionY,

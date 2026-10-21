@@ -41,6 +41,8 @@ export async function updateLogo(formData: FormData) {
   }
 
   const logoUrl = (formData.get("logoUrl") as string)?.trim() || null;
+  // sem logo clara não existe logo escura salva (evita sobra invisível)
+  const logoDarkUrl = logoUrl ? (formData.get("logoDarkUrl") as string)?.trim() || null : null;
   const logoSizePct = clampNumber(formData.get("logoSizePct"), 50, 300, 100);
   const logoPositionX = clampNumber(formData.get("logoPositionX"), 0, 100, 50);
   const logoPositionY = clampNumber(formData.get("logoPositionY"), 0, 100, 50);
@@ -64,6 +66,7 @@ export async function updateLogo(formData: FormData) {
     .update(users)
     .set({
       logoUrl,
+      logoDarkUrl,
       logoSizePct,
       logoPositionX,
       logoPositionY,
@@ -89,6 +92,7 @@ export async function removeLogo() {
     .update(users)
     .set({
       logoUrl: null,
+      logoDarkUrl: null,
       logoSizePct: 100,
       logoPositionX: 50,
       logoPositionY: 50,

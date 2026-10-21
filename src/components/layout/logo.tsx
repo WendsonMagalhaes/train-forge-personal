@@ -15,12 +15,16 @@ import type { CSSProperties } from "react";
  */
 export function Logo({
   logoUrl,
+  logoDarkUrl,
   className = "h-6 w-auto",
   sizePct = 100,
   positionX = 50,
   positionY = 50,
 }: {
+  /** Logo para o tema claro. */
   logoUrl?: string | null;
+  /** Logo para o tema escuro. Se vazia, a logo clara é usada nos dois temas. */
+  logoDarkUrl?: string | null;
   className?: string;
   sizePct?: number;
   positionX?: number;
@@ -32,7 +36,18 @@ export function Logo({
       objectPosition: `${positionX}% ${positionY}%`,
       transform: sizePct !== 100 ? `scale(${sizePct / 100})` : undefined,
     };
-    // Logo personalizada do personal — substitui a do sistema (mesma imagem em ambos os temas).
+    // Logo personalizada do personal. Com versão escura, alterna pelo tema (.tf-logo-light / .tf-logo-dark).
+    if (logoDarkUrl) {
+      return (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoUrl} alt="Logo" className={`tf-logo-light ${className} object-contain`} style={style} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoDarkUrl} alt="Logo" className={`tf-logo-dark ${className} object-contain`} style={style} />
+        </>
+      );
+    }
+    // Uma só logo: a mesma imagem nos dois temas.
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={logoUrl} alt="Logo" className={`${className} object-contain`} style={style} />;
   }
