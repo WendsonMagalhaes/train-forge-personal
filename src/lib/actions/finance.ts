@@ -9,6 +9,7 @@ import { z } from "zod";
 import { addMonths, formatISO } from "date-fns";
 import { syncStudentFinanceLock } from "@/lib/finance/lock";
 import { dateInSaoPaulo, parseDateOnly } from "@/lib/dates";
+import { parseDecimalBR } from "@/lib/numbers";
 import {
   getOrCreateCustomer,
   createCharge,
@@ -52,8 +53,9 @@ export async function createPlan(formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const priceCents = Math.round(parseFloat(parsed.data.price.replace(",", ".")) * 100);
-  if (Number.isNaN(priceCents) || priceCents <= 0) return { error: "Informe um preço válido" };
+  const price = parseDecimalBR(parsed.data.price);
+  if (price === null || price <= 0) return { error: "Informe um preço válido" };
+  const priceCents = Math.round(price * 100);
 
   await db.insert(plans).values({
     trainerId: trainer.id,
@@ -634,8 +636,9 @@ export async function updatePlan(planId: string, formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const priceCents = Math.round(parseFloat(parsed.data.price.replace(",", ".")) * 100);
-  if (Number.isNaN(priceCents) || priceCents <= 0) return { error: "Informe um preço válido" };
+  const price = parseDecimalBR(parsed.data.price);
+  if (price === null || price <= 0) return { error: "Informe um preço válido" };
+  const priceCents = Math.round(price * 100);
 
   const [owned] = await db
     .select({ id: plans.id })

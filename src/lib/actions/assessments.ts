@@ -1,4 +1,5 @@
 "use server";
+import { parseDecimalBR } from "@/lib/numbers";
 
 import { db } from "@/db";
 import { students, assessments, assessmentPhotos } from "@/db/schema";
@@ -80,9 +81,25 @@ export async function createAssessment(studentId: string, formData: FormData) {
 
   const { photoFrontUrl, photoSideUrl, photoBackUrl, ...measures } = parsed.data;
 
+  // converte os valores digitados em pt-BR ("96,5") para número antes de gravar
+  const DECIMAL_LABELS: Record<string, string> = {
+    weightKg: "Peso", heightCm: "Altura", bodyFatPct: "% Gordura", muscleMassKg: "Massa magra",
+    waistCm: "Cintura", hipCm: "Quadril", chestCm: "Peito", armRightCm: "Braço D.",
+    armLeftCm: "Braço E.", thighRightCm: "Coxa D.", thighLeftCm: "Coxa E.",
+  };
+  const converted: Record<string, string | undefined> = {};
+  for (const [field, label] of Object.entries(DECIMAL_LABELS)) {
+    const raw = (measures as Record<string, string | undefined>)[field];
+    if (raw === undefined) continue;
+    const n = parseDecimalBR(raw);
+    if (n === null) return { error: `Valor inválido em ${label}` };
+    converted[field] = String(n);
+  }
+
   const [assessment] = await db.insert(assessments).values({
     studentId,
     ...measures,
+    ...converted,
   }).returning();
 
   const photos = [

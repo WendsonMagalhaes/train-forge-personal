@@ -1,4 +1,5 @@
 "use client";
+import { NumberInput } from "@/components/ui/number-input";
 
 import { useEffect, useRef, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
@@ -354,14 +355,7 @@ function ExecutionStepper({
           </div>
           <div>
             <label className="mb-1 block text-xs text-[var(--muted)]">Carga (kg)</label>
-            <input
-              type="number"
-              step="0.5"
-              value={load}
-              onChange={(e) => setLoad(e.target.value)}
-              placeholder="Ex: 20"
-              className="h-11 w-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none focus-visible:border-[var(--tf-ember)]"
-            />
+            <NumberInput value={load} onValueChange={setLoad} placeholder="Ex: 20" className="h-11 text-sm" />
           </div>
         </div>
       )}

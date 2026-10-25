@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth";
 import { eq, and, desc, like, asc, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getStudentWorkoutAccess } from "@/lib/access/student-workout-access";
+import { parseDecimalBR } from "@/lib/numbers";
 
 const WEEKDAY_CODES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
@@ -297,10 +298,11 @@ export async function logExerciseFeedback(
 ) {
   await requireStudentWithWorkoutAccess();
 
+  const load = parseDecimalBR(data.loadKg);
   await db.insert(workoutLogExercises).values({
     workoutLogId,
     blockExerciseId,
-    loadKg: data.loadKg,
+    loadKg: load !== null ? String(load) : undefined,
     setsCompleted: data.setsCompleted,
     repsCompleted: data.repsCompleted,
     difficultyRpe: data.difficultyRpe,

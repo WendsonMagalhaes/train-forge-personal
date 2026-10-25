@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
-import { Loader2, Upload, X, Play } from "lucide-react";
+import { CameraCapture } from "@/components/ui/camera-capture";
+import { Camera, Loader2, Upload, X, Play } from "lucide-react";
 
 type UploadKind = "exercise-video" | "exercise-image" | "assessment-photo" | "trainer-logo" | "avatar";
 
@@ -19,6 +20,10 @@ type UploadKind = "exercise-video" | "exercise-image" | "assessment-photo" | "tr
  *
  * Também aceita colar uma URL externa direto (mantém compatibilidade com
  * conteúdo já cadastrado por link).
+ *
+ * Com `camera`, oferece "Tirar foto": abre a câmera com linhas de enquadramento
+ * e envia a foto capturada direto. Se a câmera não estiver disponível, abre a
+ * câmera nativa do aparelho pelo seletor de arquivos.
  */
 export function FileUpload({
     name,
@@ -29,6 +34,7 @@ export function FileUpload({
     value,
     compact = false,
     preview = "none",
+    camera = false,
     onChange,
 }: {
     name: string;
@@ -41,15 +47,19 @@ export function FileUpload({
     /** Versão enxuta: só botões (Enviar/Trocar/Remover), sem rótulo, URL nem campo de link. O preview fica com quem usa. */
     compact?: boolean;
     preview?: "image" | "video" | "none";
+    /** Mostra o botão "Tirar foto" (câmera com enquadramento). */
+    camera?: boolean;
     /** Chamado sempre que a URL final muda (upload concluído, link colado ou removido). */
     onChange?: (url: string) => void;
 }) {
     const { toast } = useToast();
     const inputRef = useRef<HTMLInputElement>(null);
+    const captureRef = useRef<HTMLInputElement>(null);
     const [urlState, setUrlState] = useState(defaultValue ?? "");
     const url = value !== undefined ? value ?? "" : urlState;
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [cameraOpen, setCameraOpen] = useState(false);
 
     function setUrl(next: string) {
         if (value === undefined) setUrlState(next);
@@ -76,8 +86,42 @@ export function FileUpload({
         } finally {
             setUploading(false);
             if (inputRef.current) inputRef.current.value = "";
+            if (captureRef.current) captureRef.current.value = "";
         }
     }
+
+    const cameraButton = camera ? (
+        <Button type="button" variant="secondary" size="sm" disabled={uploading} onClick={() => setCameraOpen(true)}>
+            <Camera className="h-3.5 w-3.5" /> Tirar foto
+        </Button>
+    ) : null;
+
+    const cameraOverlay = cameraOpen ? (
+        <CameraCapture
+            onClose={() => setCameraOpen(false)}
+            onCapture={(file) => {
+                setCameraOpen(false);
+                handleFile(file);
+            }}
+            onUnavailable={() => {
+                setCameraOpen(false);
+                captureRef.current?.click();
+            }}
+        />
+    ) : null;
+
+    // input de câmera nativa (fallback quando o navegador não libera a câmera)
+    const captureInput = camera ? (
+        <input
+            ref={captureRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => handleFile(e.target.files?.[0])}
+            className="hidden"
+            aria-label={`${label} (câmera)`}
+        />
+    ) : null;
 
     if (compact) {
         return (
@@ -91,6 +135,7 @@ export function FileUpload({
                     className="hidden"
                     aria-label={label}
                 />
+                {captureInput}
                 <div className="flex flex-wrap items-center gap-2">
                     <Button type="button" variant="secondary" size="sm" disabled={uploading} onClick={() => inputRef.current?.click()}>
                         {uploading ? (
@@ -103,6 +148,7 @@ export function FileUpload({
                             </>
                         )}
                     </Button>
+                    {cameraButton}
                     {url && (
                         <button
                             type="button"
@@ -113,6 +159,7 @@ export function FileUpload({
                         </button>
                     )}
                 </div>
+                {cameraOverlay}
             </div>
         );
     }
@@ -150,7 +197,7 @@ export function FileUpload({
                     </button>
                 </div>
             ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <input
                         ref={inputRef}
                         type="file"
@@ -159,6 +206,7 @@ export function FileUpload({
                         className="hidden"
                         id={`file-${name}`}
                     />
+                    {captureInput}
                     <Button
                         type="button"
                         variant="secondary"
@@ -176,15 +224,17 @@ export function FileUpload({
                             </>
                         )}
                     </Button>
+                    {cameraButton}
                     <span className="text-xs text-[var(--muted)]">ou</span>
                     <Input
                         placeholder="colar link (https://…)"
-                        className="h-8 text-xs"
+                        className="h-8 w-40 text-xs"
                         defaultValue=""
                         onChange={(e) => setUrl(e.target.value)}
                     />
                 </div>
             )}
+            {cameraOverlay}
         </div>
     );
 }

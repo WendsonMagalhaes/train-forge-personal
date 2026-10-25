@@ -10,6 +10,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDeleteButton } from "@/components/ui/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
@@ -150,7 +151,7 @@ function EditPlanForm({ plan, onSuccess }: { plan: Plan; onSuccess: () => void }
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor={`edit-price-${plan.id}`}>Preço (R$)</Label>
-          <Input
+          <NumberInput
             id={`edit-price-${plan.id}`}
             name="price"
             defaultValue={(plan.priceCents / 100).toFixed(2).replace(".", ",")}
@@ -202,7 +203,7 @@ function NewPlanForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="price">Preço (R$)</Label>
-          <Input id="price" name="price" placeholder="250,00" required />
+          <NumberInput id="price" name="price" placeholder="250,00" required />
         </div>
         <div>
           <Label htmlFor="billingCycle">Ciclo</Label>

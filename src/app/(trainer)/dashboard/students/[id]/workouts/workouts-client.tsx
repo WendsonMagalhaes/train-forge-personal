@@ -1,4 +1,6 @@
 "use client";
+import { parseDecimalBR } from "@/lib/numbers";
+import { NumberInput } from "@/components/ui/number-input";
 
 import { useState, useTransition, useActionState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -682,7 +684,7 @@ function AddBlockForm({
         setNumber: row.setNumber,
         label: row.label || undefined,
         reps: isTimeBased ? undefined : row.reps || undefined,
-        loadKg: row.loadKg ? Number(row.loadKg) : undefined,
+        loadKg: parseDecimalBR(row.loadKg) ?? undefined,
         holdSeconds: row.holdSeconds ? Number(row.holdSeconds) : undefined,
       }))
       : undefined;
@@ -695,7 +697,7 @@ function AddBlockForm({
       exercises: slots.map((s, i) => ({
         exerciseId: s.exerciseId,
         reps: isTimeBased ? undefined : s.reps || undefined,
-        loadKg: s.loadKg ? Number(s.loadKg) : undefined,
+        loadKg: parseDecimalBR(s.loadKg) ?? undefined,
         tempo: s.tempo || undefined,
         holdSeconds: isTimeBased && s.holdSeconds ? Number(s.holdSeconds) : undefined,
         notes: s.notes || undefined,
@@ -920,7 +922,7 @@ function ExerciseSlotField({
           )}
           <div>
             <Label className="text-xs">Carga (kg)</Label>
-            <Input type="number" step="0.5" value={slot.loadKg} onChange={(e) => onChange({ loadKg: e.target.value })} className="h-9" />
+            <NumberInput value={slot.loadKg} onValueChange={(v) => onChange({ loadKg: v })} className="h-9" />
           </div>
           <div>
             <Label className="text-xs">Tempo</Label>

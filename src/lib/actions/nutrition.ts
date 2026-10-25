@@ -1,4 +1,5 @@
 "use server";
+import { parseDecimalBR } from "@/lib/numbers";
 
 import { z } from "zod";
 import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
@@ -61,13 +62,19 @@ async function requireCurrentStudent() {
 const nutritionPlanSchema = z.object({
   studentId: z.string().uuid(),
   title: z.string().min(1, "Título obrigatório"),
-  targetCalories: z.coerce.number().positive().optional().or(z.literal("")),
-  targetProteinG: z.coerce.number().positive().optional().or(z.literal("")),
-  targetCarbsG: z.coerce.number().positive().optional().or(z.literal("")),
-  targetFatG: z.coerce.number().positive().optional().or(z.literal("")),
+  targetCalories: z.string().optional(),
+  targetProteinG: z.string().optional(),
+  targetCarbsG: z.string().optional(),
+  targetFatG: z.string().optional(),
   guidelines: z.string().optional(),
   validFrom: z.string().min(1), // yyyy-mm-dd
 });
+
+/** Meta nutricional é inteira no banco: converte "2.000" / "2000" e descarta vazio. */
+function toIntString(raw?: string | null): string | null {
+  const n = parseDecimalBR(raw);
+  return n !== null && n > 0 ? String(Math.round(n)) : null;
+}
 
 export type NutritionPlanInput = {
   studentId: string;
@@ -106,10 +113,10 @@ export async function createNutritionPlan(input: NutritionPlanInput) {
       studentId: parsed.studentId,
       createdById: session.user.id,
       title: parsed.title,
-      targetCalories: emptyToNull(parsed.targetCalories),
-      targetProteinG: emptyToNull(parsed.targetProteinG),
-      targetCarbsG: emptyToNull(parsed.targetCarbsG),
-      targetFatG: emptyToNull(parsed.targetFatG),
+      targetCalories: toIntString(parsed.targetCalories),
+      targetProteinG: toIntString(parsed.targetProteinG),
+      targetCarbsG: toIntString(parsed.targetCarbsG),
+      targetFatG: toIntString(parsed.targetFatG),
       guidelines: parsed.guidelines || null,
       validFrom,
     });

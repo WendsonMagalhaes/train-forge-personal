@@ -1,4 +1,5 @@
 "use client";
+import { NumberInput } from "@/components/ui/number-input";
 
 import { useActionState, useEffect } from "react";
 import { createAssessment } from "@/lib/actions/assessments";
@@ -30,34 +31,34 @@ export function NewAssessmentForm({ studentId, onSuccess }: { studentId: string;
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div><Label htmlFor="weightKg">Peso (kg)</Label><Input id="weightKg" name="weightKg" type="number" step="0.1" /></div>
-        <div><Label htmlFor="heightCm">Altura (cm)</Label><Input id="heightCm" name="heightCm" type="number" step="0.1" /></div>
+        <div><Label htmlFor="weightKg">Peso (kg)</Label><NumberInput id="weightKg" name="weightKg" /></div>
+        <div><Label htmlFor="heightCm">Altura (cm)</Label><NumberInput id="heightCm" name="heightCm" /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><Label htmlFor="bodyFatPct">% Gordura</Label><Input id="bodyFatPct" name="bodyFatPct" type="number" step="0.1" /></div>
-        <div><Label htmlFor="muscleMassKg">Massa magra (kg)</Label><Input id="muscleMassKg" name="muscleMassKg" type="number" step="0.1" /></div>
+        <div><Label htmlFor="bodyFatPct">% Gordura</Label><NumberInput id="bodyFatPct" name="bodyFatPct" /></div>
+        <div><Label htmlFor="muscleMassKg">Massa magra (kg)</Label><NumberInput id="muscleMassKg" name="muscleMassKg" /></div>
       </div>
 
       <p className="text-xs font-medium text-[var(--muted)]">Circunferências (cm)</p>
       <div className="grid grid-cols-3 gap-3">
-        <div><Label htmlFor="waistCm">Cintura</Label><Input id="waistCm" name="waistCm" type="number" step="0.1" /></div>
-        <div><Label htmlFor="hipCm">Quadril</Label><Input id="hipCm" name="hipCm" type="number" step="0.1" /></div>
-        <div><Label htmlFor="chestCm">Peito</Label><Input id="chestCm" name="chestCm" type="number" step="0.1" /></div>
+        <div><Label htmlFor="waistCm">Cintura</Label><NumberInput id="waistCm" name="waistCm" /></div>
+        <div><Label htmlFor="hipCm">Quadril</Label><NumberInput id="hipCm" name="hipCm" /></div>
+        <div><Label htmlFor="chestCm">Peito</Label><NumberInput id="chestCm" name="chestCm" /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><Label htmlFor="armRightCm">Braço D.</Label><Input id="armRightCm" name="armRightCm" type="number" step="0.1" /></div>
-        <div><Label htmlFor="armLeftCm">Braço E.</Label><Input id="armLeftCm" name="armLeftCm" type="number" step="0.1" /></div>
+        <div><Label htmlFor="armRightCm">Braço D.</Label><NumberInput id="armRightCm" name="armRightCm" /></div>
+        <div><Label htmlFor="armLeftCm">Braço E.</Label><NumberInput id="armLeftCm" name="armLeftCm" /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><Label htmlFor="thighRightCm">Coxa D.</Label><Input id="thighRightCm" name="thighRightCm" type="number" step="0.1" /></div>
-        <div><Label htmlFor="thighLeftCm">Coxa E.</Label><Input id="thighLeftCm" name="thighLeftCm" type="number" step="0.1" /></div>
+        <div><Label htmlFor="thighRightCm">Coxa D.</Label><NumberInput id="thighRightCm" name="thighRightCm" /></div>
+        <div><Label htmlFor="thighLeftCm">Coxa E.</Label><NumberInput id="thighLeftCm" name="thighLeftCm" /></div>
       </div>
 
       <p className="text-xs font-medium text-[var(--muted)]">Fotos de evolução (opcional)</p>
       <div className="grid grid-cols-3 gap-3">
-        <FileUpload name="photoFrontUrl" label="Frente" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" />
-        <FileUpload name="photoSideUrl" label="Lado" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" />
-        <FileUpload name="photoBackUrl" label="Costas" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" />
+        <FileUpload name="photoFrontUrl" label="Frente" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" camera />
+        <FileUpload name="photoSideUrl" label="Lado" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" camera />
+        <FileUpload name="photoBackUrl" label="Costas" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" camera />
       </div>
 
       <div>

@@ -1,4 +1,5 @@
 "use client";
+import { NumberInput } from "@/components/ui/number-input";
 
 import { useState, useTransition } from "react";
 import { createNutritionPlan } from "@/lib/actions/nutrition";
@@ -55,19 +56,19 @@ export function NutritionPlanForm({ studentId }: { studentId: string }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
           <Label htmlFor="targetCalories">Calorias (kcal)</Label>
-          <Input id="targetCalories" name="targetCalories" type="number" min={0} />
+          <NumberInput id="targetCalories" name="targetCalories" />
         </div>
         <div>
           <Label htmlFor="targetProteinG">Proteína (g)</Label>
-          <Input id="targetProteinG" name="targetProteinG" type="number" min={0} />
+          <NumberInput id="targetProteinG" name="targetProteinG" />
         </div>
         <div>
           <Label htmlFor="targetCarbsG">Carboidrato (g)</Label>
-          <Input id="targetCarbsG" name="targetCarbsG" type="number" min={0} />
+          <NumberInput id="targetCarbsG" name="targetCarbsG" />
         </div>
         <div>
           <Label htmlFor="targetFatG">Gordura (g)</Label>
-          <Input id="targetFatG" name="targetFatG" type="number" min={0} />
+          <NumberInput id="targetFatG" name="targetFatG" />
         </div>
       </div>
 
