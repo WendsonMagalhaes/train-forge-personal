@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { listMyWorkoutPlans, getWorkoutPlanDetail } from "@/lib/actions/student-workout";
+import { listMyWorkoutPlans, getWorkoutPlanDetail, getMyWorkoutAccess } from "@/lib/actions/student-workout";
 import { WeekWorkoutClient } from "./week-workout-client";
 import { Panel } from "@/components/ui/panel";
 import { Dumbbell, ChevronRight } from "lucide-react";
+import { WorkoutsBlockedPanel } from "./workouts-blocked-panel";
 
 export default async function StudentTodayPage() {
+  const access = await getMyWorkoutAccess();
+
+  // Bloqueio só afeta a ficha de exercícios; a navegação continua na barra inferior.
+  if (!access.allowed) return <WorkoutsBlockedPanel reason={access.reason} />;
+
   const { cycle, plans } = await listMyWorkoutPlans();
 
   if (!cycle) {

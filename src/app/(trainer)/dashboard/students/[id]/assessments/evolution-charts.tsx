@@ -1,4 +1,5 @@
 "use client";
+import { formatDateOnly } from "@/lib/dates";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -11,7 +12,7 @@ type Assessment = {
 
 export function EvolutionCharts({ assessments }: { assessments: Assessment[] }) {
   const data = assessments.map((a) => ({
-    date: new Date(a.assessedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
+    date: formatDateOnly(a.assessedAt, { day: "2-digit", month: "short" }),
     peso: a.weightKg ? Number(a.weightKg) : null,
     gordura: a.bodyFatPct ? Number(a.bodyFatPct) : null,
     cintura: a.waistCm ? Number(a.waistCm) : null,

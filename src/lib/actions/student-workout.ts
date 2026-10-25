@@ -8,6 +8,7 @@ import {
 import { auth } from "@/lib/auth";
 import { eq, and, desc, like, asc, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { getStudentWorkoutAccess } from "@/lib/access/student-workout-access";
 
 const WEEKDAY_CODES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
@@ -18,6 +19,25 @@ async function requireStudent() {
   const [student] = await db.select().from(students).where(eq(students.userId, session.user.id)).limit(1);
   if (!student) throw new Error("Perfil de aluno não encontrado");
   return student;
+}
+
+/**
+ * Igual ao requireStudent, mas também exige que o aluno esteja em dia com a
+ * mensalidade. Usado em todas as ações de treino (ver, registrar execução).
+ */
+async function requireStudentWithWorkoutAccess() {
+  const student = await requireStudent();
+  const access = await getStudentWorkoutAccess(student.id);
+  if (!access.allowed) {
+    throw new Error("Acesso aos treinos bloqueado. Regularize sua mensalidade para liberar a ficha.");
+  }
+  return student;
+}
+
+/** Usado pelas páginas de treino para decidir se mostram a ficha ou o aviso de bloqueio. */
+export async function getMyWorkoutAccess() {
+  const student = await requireStudent();
+  return getStudentWorkoutAccess(student.id);
 }
 
 // Regra simples de progressão: olha a última execução registrada desse exercício
@@ -186,7 +206,7 @@ async function loadSubstitutesFor(exerciseIds: string[]) {
 }
 
 export async function getTodayWorkout() {
-  const student = await requireStudent();
+  const student = await requireStudentWithWorkoutAccess();
   const todayCode = WEEKDAY_CODES[new Date().getDay()];
 
   const [cycle] = await db
@@ -212,7 +232,7 @@ export async function getTodayWorkout() {
 
 /** Ciclo ativo do aluno + todas as fichas dele (não só a de hoje) — usada na tela "Meus treinos". */
 export async function listMyWorkoutPlans() {
-  const student = await requireStudent();
+  const student = await requireStudentWithWorkoutAccess();
 
   const [cycle] = await db
     .select()
@@ -243,7 +263,7 @@ export async function listMyWorkoutPlans() {
 
 /** Detalhe completo de UMA ficha (qualquer dia do ciclo, não só hoje) — usada ao abrir uma ficha em "Meus treinos". */
 export async function getWorkoutPlanDetail(planId: string) {
-  const student = await requireStudent();
+  const student = await requireStudentWithWorkoutAccess();
 
   const [row] = await db
     .select({ plan: workoutPlans, studentId: workoutCycles.studentId })
@@ -259,7 +279,7 @@ export async function getWorkoutPlanDetail(planId: string) {
 }
 
 export async function logWorkoutCompletion(planId: string, overallFeeling: string, notes: string) {
-  const student = await requireStudent();
+  const student = await requireStudentWithWorkoutAccess();
 
   const [log] = await db
     .insert(workoutLogs)
@@ -275,7 +295,7 @@ export async function logExerciseFeedback(
   blockExerciseId: string,
   data: { loadKg?: string; setsCompleted?: number; repsCompleted?: string; difficultyRpe?: number; hadPain?: boolean; painDetail?: string }
 ) {
-  await requireStudent();
+  await requireStudentWithWorkoutAccess();
 
   await db.insert(workoutLogExercises).values({
     workoutLogId,

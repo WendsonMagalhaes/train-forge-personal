@@ -1,4 +1,5 @@
 "use client";
+import { formatDateOnly } from "@/lib/dates";
 
 import { Panel, PanelTitle } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +32,8 @@ function formatCents(cents: number) {
 }
 
 function formatDate(d: string | Date) {
-  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  if (d instanceof Date) return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  return formatDateOnly(d, { day: "2-digit", month: "long", year: "numeric" });
 }
 
 const STATUS_VARIANT: Record<string, "success" | "outline" | "danger" | "secondary"> = {

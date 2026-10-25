@@ -3,12 +3,13 @@
 import { useMemo, useState } from "react";
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { GitCompareArrows } from "lucide-react";
+import { formatDateOnly } from "@/lib/dates";
 
 type AssessmentPhoto = { id: string; angle: string | null; url: string };
 type Assessment = { id: string; assessedAt: string; photos?: AssessmentPhoto[] };
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  return formatDateOnly(d, { day: "2-digit", month: "short", year: "numeric" });
 }
 
 export function PhotoComparison({ assessments }: { assessments: Assessment[] }) {

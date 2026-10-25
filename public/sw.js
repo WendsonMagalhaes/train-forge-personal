@@ -1,8 +1,15 @@
-const CACHE = "trainforge-v3";
+// v4: páginas de treino deixaram de ser guardadas no cache (ver NEVER_CACHE_WORKOUT).
+const CACHE = "trainforge-v4";
 // Shell mínimo do app inteiro (login + fallback offline). As áreas do personal
 // (/dashboard), do admin (/admin) e do aluno (/portal) entram no cache
 // dinamicamente conforme o usuário navega — ver fetch handler abaixo.
 const SHELL = ["/login", "/manifest.json"];
+
+// Fichas de treino não podem ficar em cache: um aluno bloqueado por
+// mensalidade em atraso não pode ver a ficha offline a partir de uma cópia antiga.
+function isWorkoutRoute(pathname) {
+  return pathname === "/portal" || pathname.startsWith("/portal/workouts");
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
@@ -21,19 +28,29 @@ self.addEventListener("activate", (event) => {
 // network-first pra qualquer navegação (login, dashboard do personal, admin
 // ou portal do aluno) — garante que o que sobe pro ar aparece na hora no PWA.
 // Guarda uma cópia de cada página visitada com sucesso pra funcionar offline
-// depois; se a rede falhar e não tiver essa página em cache, cai no login.
+// depois, exceto as fichas de treino; se a rede falhar e não tiver essa página
+// em cache, cai no login.
 self.addEventListener("fetch", (event) => {
-  if (event.request.mode === "navigate") {
+  if (event.request.mode !== "navigate") return;
+
+  const { pathname } = new URL(event.request.url);
+
+  if (isWorkoutRoute(pathname)) {
     event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then((r) => r || caches.match("/login")))
+      fetch(event.request).catch(() => caches.match("/login"))
     );
+    return;
   }
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request).then((r) => r || caches.match("/login")))
+  );
 });
 
 // ---------- Web Push ----------

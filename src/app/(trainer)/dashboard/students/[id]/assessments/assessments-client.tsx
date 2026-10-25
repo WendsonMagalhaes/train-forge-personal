@@ -1,4 +1,5 @@
 "use client";
+import { formatDateOnly } from "@/lib/dates";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -63,7 +64,7 @@ export function AssessmentsClient({ studentId, assessments }: { studentId: strin
               <div key={a.id} className="flex items-start justify-between gap-3 p-5">
                 <div className="min-w-0">
                   <p className="text-sm font-medium">
-                    {new Date(a.assessedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                    {formatDateOnly(a.assessedAt, { day: "2-digit", month: "long", year: "numeric" })}
                   </p>
                   <p className="mt-1 text-xs text-[var(--muted)]">
                     {a.weightKg ? `${a.weightKg}kg` : "—"}
@@ -94,7 +95,7 @@ export function AssessmentsClient({ studentId, assessments }: { studentId: strin
                   )}
                 </div>
                 <ConfirmDeleteButton
-                  itemLabel={`avaliação de ${new Date(a.assessedAt).toLocaleDateString("pt-BR")}`}
+                  itemLabel={`avaliação de ${formatDateOnly(a.assessedAt)}`}
                   trigger={<button className="shrink-0 text-[var(--muted)] transition-colors hover:text-red-500" type="button"><Trash2 className="h-4 w-4" /></button>}
                   onConfirm={async () => { await deleteAssessment(studentId, a.id); refresh(); }}
                 />

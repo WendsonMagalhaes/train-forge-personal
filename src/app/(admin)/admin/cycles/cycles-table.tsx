@@ -1,4 +1,5 @@
 "use client";
+import { formatDateOnly } from "@/lib/dates";
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
@@ -55,7 +56,7 @@ export function CyclesTable({ rows }: { rows: CycleRow[] }) {
                                 </div>
                                 <p className="truncate text-xs text-[var(--muted)]">
                                     {c.studentName} · Personal: {c.trainerName}
-                                    {c.goal ? ` · ${c.goal}` : ""} · desde {new Date(c.startDate).toLocaleDateString("pt-BR")}
+                                    {c.goal ? ` · ${c.goal}` : ""} · desde {formatDateOnly(c.startDate)}
                                 </p>
                             </div>
                             <div className="flex shrink-0 items-center gap-3">

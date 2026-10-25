@@ -22,6 +22,13 @@
       "when": 1792622044475,
       "tag": "0002_logo_dark_url",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792930529318,
+      "tag": "0003_finance_lock",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,5 @@
 "use client";
+import { formatDateOnly } from "@/lib/dates";
 
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { EvolutionCharts } from "@/app/(trainer)/dashboard/students/[id]/assessments/evolution-charts";
@@ -41,7 +42,7 @@ export function StudentProgressClient({ assessments }: { assessments: Assessment
                         {sortedDesc.map((a) => (
                             <div key={a.id} className="p-5">
                                 <p className="text-sm font-medium">
-                                    {new Date(a.assessedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                                    {formatDateOnly(a.assessedAt, { day: "2-digit", month: "long", year: "numeric" })}
                                 </p>
                                 <p className="mt-1 text-xs text-[var(--muted)]">
                                     {a.weightKg ? `${a.weightKg}kg` : "—"}

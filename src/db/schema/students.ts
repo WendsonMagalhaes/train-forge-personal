@@ -14,6 +14,11 @@ export const students = pgTable("students", {
   gender: text("gender"),
   goals: text("goals").array(), // múltipla escolha — ver src/lib/constants.ts (STUDENT_GOAL_OPTIONS)
   status: studentStatusEnum("status").notNull().default("active"),
+  // true quando o bloqueio foi aplicado automaticamente por atraso na mensalidade
+  // (diferencia de trancamento manual feito pelo personal)
+  financeLocked: boolean("finance_locked").notNull().default(false),
+  // quando o personal libera manualmente o aluno, cobranças vencidas até esta data são perdoadas
+  financeOverrideAt: timestamp("finance_override_at"),
   startedAt: date("started_at").defaultNow(),
   // CPF do aluno — necessário para criar cliente/cobrança no gateway de
   // pagamento (Asaas exige cpfCnpj). Coletado sob demanda na primeira

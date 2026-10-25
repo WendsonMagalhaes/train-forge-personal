@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { getWorkoutPlanDetail } from "@/lib/actions/student-workout";
+import { getWorkoutPlanDetail, getMyWorkoutAccess } from "@/lib/actions/student-workout";
 import { TodayWorkoutClient } from "../../today-workout-client";
+import { WorkoutsBlockedPanel } from "../../workouts-blocked-panel";
 import { ChevronLeft } from "lucide-react";
 
 export default async function StudentWorkoutPlanPage({ params }: { params: Promise<{ planId: string }> }) {
+  const access = await getMyWorkoutAccess();
+  if (!access.allowed) return <WorkoutsBlockedPanel reason={access.reason} />;
+
   const { planId } = await params;
   const { plan, blocks } = await getWorkoutPlanDetail(planId);
 

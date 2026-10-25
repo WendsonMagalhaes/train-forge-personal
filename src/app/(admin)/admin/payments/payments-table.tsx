@@ -1,4 +1,5 @@
 "use client";
+import { formatDateOnly } from "@/lib/dates";
 
 import * as React from "react";
 import { Panel } from "@/components/ui/panel";
@@ -59,7 +60,7 @@ export function PaymentsTable({ rows }: { rows: PaymentRow[] }) {
                                     {p.method && <Badge variant="outline">{PAYMENT_METHOD_LABEL[p.method] ?? p.method}</Badge>}
                                 </div>
                                 <p className="truncate text-xs text-[var(--muted)]">
-                                    {formatCents(p.amountCents)} · vencimento {new Date(p.dueDate).toLocaleDateString("pt-BR")}
+                                    {formatCents(p.amountCents)} · vencimento {formatDateOnly(p.dueDate)}
                                     {p.paidAt ? ` · pago em ${new Date(p.paidAt).toLocaleDateString("pt-BR")}` : ""}
                                 </p>
                             </div>

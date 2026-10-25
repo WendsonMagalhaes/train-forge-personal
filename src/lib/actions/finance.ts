@@ -3,10 +3,12 @@
 import { db } from "@/db";
 import { plans, subscriptions, payments, students, users, invoices } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { eq, and, asc, desc, count } from "drizzle-orm";
+import { eq, and, asc, desc, count, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { addMonths, formatISO } from "date-fns";
+import { syncStudentFinanceLock } from "@/lib/finance/lock";
+import { dateInSaoPaulo, parseDateOnly } from "@/lib/dates";
 import {
   getOrCreateCustomer,
   createCharge,
@@ -107,7 +109,7 @@ export async function listSubscriptionsOverview() {
     const [pendingPayment] = await db
       .select()
       .from(payments)
-      .where(and(eq(payments.subscriptionId, sub.id), eq(payments.status, "pending")))
+      .where(and(eq(payments.subscriptionId, sub.id), inArray(payments.status, ["pending", "overdue"])))
       .orderBy(asc(payments.dueDate))
       .limit(1);
 
@@ -162,7 +164,7 @@ export async function deleteSubscription(subscriptionId: string) {
   const trainer = await requireTrainer();
 
   const [owned] = await db
-    .select({ id: subscriptions.id })
+    .select({ id: subscriptions.id, studentId: subscriptions.studentId })
     .from(subscriptions)
     .innerJoin(plans, eq(plans.id, subscriptions.planId))
     .where(and(eq(subscriptions.id, subscriptionId), eq(plans.trainerId, trainer.id)))
@@ -170,6 +172,7 @@ export async function deleteSubscription(subscriptionId: string) {
   if (!owned) return;
 
   await db.delete(subscriptions).where(eq(subscriptions.id, subscriptionId));
+  await syncStudentFinanceLock(owned.studentId);
   revalidatePath("/dashboard/finance");
 }
 
@@ -184,6 +187,7 @@ export async function markPaymentPaid(paymentId: string, method: "pix" | "credit
   await db.update(payments).set({ status: "paid", paidAt: new Date(), method }).where(eq(payments.id, paymentId));
 
   await advanceSubscriptionAfterPayment(paymentId);
+  await syncStudentFinanceLock(payment.studentId);
 
   revalidatePath("/dashboard/finance");
   return { success: true };
@@ -205,7 +209,7 @@ async function advanceSubscriptionAfterPayment(paymentId: string) {
   const monthsToAdd = plan ? MONTHS_BY_CYCLE[plan.billingCycle] : undefined;
 
   if (plan && monthsToAdd) {
-    const nextDueStr = formatISO(addMonths(new Date(sub.nextDueDate), monthsToAdd), { representation: "date" });
+    const nextDueStr = formatISO(addMonths(parseDateOnly(sub.nextDueDate), monthsToAdd), { representation: "date" });
     await db.update(subscriptions).set({ status: "active", nextDueDate: nextDueStr }).where(eq(subscriptions.id, sub.id));
 
     const [nextPayment] = await db
@@ -419,6 +423,8 @@ export async function handleAsaasWebhookEvent(
     confirmedDate: chargePayload.confirmedDate,
   });
 
+  await syncStudentFinanceLock(payment.studentId);
+
   if (!result.updated) {
     return { ignored: true, reason: "Sem mudança de status (já estava refletido no sistema)." };
   }
@@ -453,6 +459,8 @@ export async function syncGatewayCharge(paymentId: string) {
       status: charge.status,
       billingType: charge.billingType,
     });
+
+    await syncStudentFinanceLock(payment.studentId);
 
     if (!result.updated) {
       return { success: true, message: "Nenhuma mudança — o status já está atualizado." };
@@ -606,4 +614,117 @@ export async function getMyPaymentHistory() {
 
   const history = await fetchPaymentHistory(student.id);
   return { subscription: subscription ?? null, history };
+}
+
+// ---------- Edição de plano e de vencimento ----------
+
+/**
+ * Edita um plano. Mudanças de preço valem para as próximas cobranças: pagamentos
+ * pendentes que ainda não foram enviados ao gateway são atualizados; cobranças
+ * já geradas no Asaas mantêm o valor original.
+ */
+export async function updatePlan(planId: string, formData: FormData) {
+  const trainer = await requireTrainer();
+
+  const parsed = planSchema.safeParse({
+    name: formData.get("name"),
+    price: formData.get("price"),
+    billingCycle: formData.get("billingCycle"),
+    sessionsIncluded: formData.get("sessionsIncluded") || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const priceCents = Math.round(parseFloat(parsed.data.price.replace(",", ".")) * 100);
+  if (Number.isNaN(priceCents) || priceCents <= 0) return { error: "Informe um preço válido" };
+
+  const [owned] = await db
+    .select({ id: plans.id })
+    .from(plans)
+    .where(and(eq(plans.id, planId), eq(plans.trainerId, trainer.id)))
+    .limit(1);
+  if (!owned) return { error: "Plano não encontrado" };
+
+  await db
+    .update(plans)
+    .set({
+      name: parsed.data.name,
+      priceCents,
+      billingCycle: parsed.data.billingCycle,
+      sessionsIncluded: parsed.data.sessionsIncluded ? Number(parsed.data.sessionsIncluded) : null,
+    })
+    .where(eq(plans.id, planId));
+
+  await db
+    .update(payments)
+    .set({ amountCents: priceCents })
+    .where(
+      and(
+        eq(payments.status, "pending"),
+        isNull(payments.gatewayChargeId),
+        inArray(
+          payments.subscriptionId,
+          db.select({ id: subscriptions.id }).from(subscriptions).where(eq(subscriptions.planId, planId)),
+        ),
+      ),
+    );
+
+  revalidatePath("/dashboard/finance");
+  return { success: true };
+}
+
+/**
+ * Altera o vencimento de uma assinatura e da cobrança pendente. Se a nova data
+ * já passou, o aluno é bloqueado; se o vencimento vai para o futuro, é liberado.
+ * Cobrança já gerada no Asaas mantém a data antiga lá: nesse caso o retorno
+ * traz um aviso para gerar uma nova cobrança.
+ */
+export async function updateSubscriptionDueDate(subscriptionId: string, dueDate: string) {
+  const trainer = await requireTrainer();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return { error: "Informe uma data válida" };
+
+  const [owned] = await db
+    .select({ id: subscriptions.id, studentId: subscriptions.studentId })
+    .from(subscriptions)
+    .innerJoin(plans, eq(plans.id, subscriptions.planId))
+    .where(and(eq(subscriptions.id, subscriptionId), eq(plans.trainerId, trainer.id)))
+    .limit(1);
+  if (!owned) return { error: "Assinatura não encontrada" };
+
+  const [pending] = await db
+    .select({ id: payments.id, gatewayChargeId: payments.gatewayChargeId })
+    .from(payments)
+    .where(
+      and(
+        eq(payments.subscriptionId, subscriptionId),
+        inArray(payments.status, ["pending", "overdue"]),
+      ),
+    )
+    .limit(1);
+
+  await db.update(subscriptions).set({ nextDueDate: dueDate }).where(eq(subscriptions.id, subscriptionId));
+
+  if (pending) {
+    await db.update(payments).set({ dueDate }).where(eq(payments.id, pending.id));
+
+    // vencimento voltou para hoje ou futuro: cobrança atrasada volta a pendente (só as que não estão no gateway)
+    if (dueDate >= dateInSaoPaulo() && !pending.gatewayChargeId) {
+      await db
+        .update(payments)
+        .set({ status: "pending" })
+        .where(and(eq(payments.id, pending.id), eq(payments.status, "overdue")));
+    }
+  }
+
+  await syncStudentFinanceLock(owned.studentId);
+  revalidatePath("/dashboard/finance");
+  revalidatePath(`/dashboard/students/${owned.studentId}/finance`);
+
+  if (pending?.gatewayChargeId) {
+    return {
+      success: true,
+      warning: "A cobrança já enviada ao Asaas mantém o vencimento antigo. Gere uma nova cobrança para o novo vencimento.",
+    };
+  }
+  return { success: true };
 }

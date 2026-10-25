@@ -14,14 +14,33 @@ const options = [
 
 const labelByValue = Object.fromEntries(options.map((o) => [o.value, o.label]));
 
-export function StatusControl({ studentId, currentStatus }: { studentId: string; currentStatus: string }) {
+export function StatusControl({
+  studentId,
+  currentStatus,
+  financeLocked,
+}: {
+  studentId: string;
+  currentStatus: string;
+  financeLocked: boolean;
+}) {
   const [pending, startTransition] = useTransition();
   const { toast } = useToast();
 
   return (
     <div>
       <p className="mb-2 text-xs text-[var(--muted)]">Status do aluno</p>
-      <div className="flex gap-2">
+
+      {currentStatus === "locked" && financeLocked && (
+        <div className="mb-3 rounded-[var(--radius)] border border-red-500/40 bg-red-500/10 p-3 text-xs">
+          <p className="font-medium text-red-500">Bloqueado automaticamente por atraso na mensalidade</p>
+          <p className="mt-1 text-[var(--muted)]">
+            Os treinos do aluno estão indisponíveis. Ao regularizar o pagamento, o acesso volta sozinho.
+            Para liberar agora, mesmo com o atraso, clique em Ativo.
+          </p>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
         {options.map((opt) => (
           <Button
             key={opt.value}

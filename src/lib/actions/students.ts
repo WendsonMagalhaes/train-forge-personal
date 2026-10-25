@@ -88,6 +88,7 @@ export async function getStudent(studentId: string) {
     .select({
       id: students.id,
       status: students.status,
+      financeLocked: students.financeLocked,
       goals: students.goals,
       phone: students.phone,
       birthDate: students.birthDate,
@@ -175,7 +176,18 @@ export async function updateStudentStatus(
   const [current] = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
   if (!current) return { error: "Aluno não encontrado" };
 
-  await db.update(students).set({ status: newStatus, updatedAt: new Date() }).where(eq(students.id, studentId));
+  // Liberar manualmente um aluno trancado (inclusive por atraso) perdoa as cobranças
+  // vencidas até agora; um atraso novo, com vencimento posterior, volta a bloquear.
+  const unlockingLocked = current.status === "locked" && newStatus === "active";
+  await db
+    .update(students)
+    .set({
+      status: newStatus,
+      updatedAt: new Date(),
+      financeLocked: false,
+      ...(unlockingLocked ? { financeOverrideAt: new Date() } : {}),
+    })
+    .where(eq(students.id, studentId));
 
   await db.insert(studentStatusLog).values({
     studentId,

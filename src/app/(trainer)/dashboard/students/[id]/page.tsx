@@ -1,5 +1,6 @@
 import { getStudent } from "@/lib/actions/students";
 import { notFound } from "next/navigation";
+import { formatDateOnly } from "@/lib/dates";
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { STUDENT_GOAL_OPTIONS } from "@/lib/constants";
 import { NotesSection } from "./notes-section";
@@ -23,7 +24,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           </div>
           <div>
             <dt className="text-xs text-[var(--muted)]">Nascimento</dt>
-            <dd>{student.birthDate || "—"}</dd>
+            <dd>{student.birthDate ? formatDateOnly(student.birthDate, { day: "2-digit", month: "long", year: "numeric" }) : "—"}</dd>
           </div>
           <div>
             <dt className="text-xs text-[var(--muted)]">Gênero</dt>
@@ -41,12 +42,12 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           </div>
           <div>
             <dt className="text-xs text-[var(--muted)]">Início</dt>
-            <dd>{student.startedAt || "—"}</dd>
+            <dd>{student.startedAt ? formatDateOnly(student.startedAt, { day: "2-digit", month: "long", year: "numeric" }) : "—"}</dd>
           </div>
         </dl>
 
         <div className="tf-hairline mt-5 pt-5">
-          <StatusControl studentId={student.id} currentStatus={student.status} />
+          <StatusControl studentId={student.id} currentStatus={student.status} financeLocked={student.financeLocked} />
         </div>
       </Panel>
 

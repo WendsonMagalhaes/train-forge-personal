@@ -3,20 +3,33 @@
     {
       "path": "/api/cron/session-reminders",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/finance-sync",
+      "schedule": "0 9 * * *"
     }
   ],
   "headers": [
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Service-Worker-Allowed", "value": "/" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
       ]
     },
     {
       "source": "/manifest.json",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
       ]
     }
   ]

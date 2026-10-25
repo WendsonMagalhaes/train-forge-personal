@@ -1,8 +1,12 @@
-import { listMyWorkoutPlans } from "@/lib/actions/student-workout";
+import { listMyWorkoutPlans, getMyWorkoutAccess } from "@/lib/actions/student-workout";
 import { MyWorkoutsClient } from "./my-workouts-client";
 import { Panel } from "@/components/ui/panel";
+import { WorkoutsBlockedPanel } from "../workouts-blocked-panel";
 
 export default async function StudentWorkoutsPage() {
+  const access = await getMyWorkoutAccess();
+  if (!access.allowed) return <WorkoutsBlockedPanel reason={access.reason} />;
+
   const { cycle, plans } = await listMyWorkoutPlans();
 
   if (!cycle) {
