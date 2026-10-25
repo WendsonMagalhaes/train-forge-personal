@@ -3,6 +3,7 @@ import { formatDateOnly } from "@/lib/dates";
 
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { EvolutionCharts } from "@/app/(trainer)/dashboard/students/[id]/assessments/evolution-charts";
+import { PhotoComparison } from "@/components/assessments/photo-comparison";
 
 type AssessmentPhoto = { id: string; angle: string | null; url: string };
 type Assessment = {
@@ -30,6 +31,8 @@ export function StudentProgressClient({ assessments }: { assessments: Assessment
                 </PanelHeader>
                 <EvolutionCharts assessments={assessments} />
             </Panel>
+
+            <PhotoComparison assessments={assessments} />
 
             <Panel className="p-0">
                 <div className="tf-hairline p-5 pb-4">

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
-import { CameraCapture } from "@/components/ui/camera-capture";
+import { CameraCapture, type CaptureView } from "@/components/ui/camera-capture";
 import { Camera, Loader2, Upload, X, Play } from "lucide-react";
 
 type UploadKind = "exercise-video" | "exercise-image" | "assessment-photo" | "trainer-logo" | "avatar";
@@ -35,6 +35,7 @@ export function FileUpload({
     compact = false,
     preview = "none",
     camera = false,
+    guide = "front",
     onChange,
 }: {
     name: string;
@@ -49,6 +50,8 @@ export function FileUpload({
     preview?: "image" | "video" | "none";
     /** Mostra o botão "Tirar foto" (câmera com enquadramento). */
     camera?: boolean;
+    /** Vista da foto: define a silhueta de enquadramento da câmera. */
+    guide?: CaptureView;
     /** Chamado sempre que a URL final muda (upload concluído, link colado ou removido). */
     onChange?: (url: string) => void;
 }) {
@@ -98,6 +101,7 @@ export function FileUpload({
 
     const cameraOverlay = cameraOpen ? (
         <CameraCapture
+            view={guide}
             onClose={() => setCameraOpen(false)}
             onCapture={(file) => {
                 setCameraOpen(false);

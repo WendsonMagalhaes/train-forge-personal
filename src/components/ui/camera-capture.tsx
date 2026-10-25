@@ -9,14 +9,23 @@ import { Camera, X } from "lucide-react";
  * A foto é recortada no formato 3:4 exibido na tela, então o que aparece
  * dentro das linhas é exatamente o que vai pra comparação.
  */
+// silhuetas de referência no viewBox 300x400 (3:4)
+const FRONT_SILHOUETTE = "M 110 112 Q 150 100 190 112 L 215 160 L 205 240 L 200 360 L 165 360 L 150 250 L 135 360 L 100 360 L 95 240 L 85 160 Z";
+// perfil: corpo mais estreito e tronco levemente projetado
+const SIDE_SILHOUETTE = "M 136 112 Q 168 104 180 126 L 182 170 L 174 240 L 178 360 L 162 360 L 152 250 L 140 360 L 124 360 L 128 240 L 126 170 Z";
+
+export type CaptureView = "front" | "side" | "back";
+
 export function CameraCapture({
   onCapture,
   onClose,
   onUnavailable,
+  view = "front",
 }: {
   onCapture: (file: File) => void;
   onClose: () => void;
   onUnavailable: () => void;
+  view?: CaptureView;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [ready, setReady] = useState(false);
@@ -115,9 +124,9 @@ export function CameraCapture({
             </g>
           ))}
           {/* silhueta de referência */}
-          <ellipse cx="150" cy="78" rx="24" ry="30" fill="none" stroke="#ffffff" strokeOpacity="0.5" strokeDasharray="5 5" />
+          <ellipse cx="150" cy="78" rx={view === "side" ? 22 : 24} ry="30" fill="none" stroke="#ffffff" strokeOpacity="0.5" strokeDasharray="5 5" />
           <path
-            d="M 110 112 Q 150 100 190 112 L 215 160 L 205 240 L 200 360 L 165 360 L 150 250 L 135 360 L 100 360 L 95 240 L 85 160 Z"
+            d={view === "side" ? SIDE_SILHOUETTE : FRONT_SILHOUETTE}
             fill="none" stroke="#ffffff" strokeOpacity="0.4" strokeDasharray="5 5"
           />
         </svg>

@@ -9,7 +9,7 @@ import { ConfirmDeleteButton } from "@/components/ui/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { EvolutionCharts } from "./evolution-charts";
-import { PhotoComparison } from "./photo-comparison";
+import { PhotoComparison } from "@/components/assessments/photo-comparison";
 import { NewAssessmentForm } from "./new-assessment-form";
 import { Plus, Trash2, X } from "lucide-react";
 

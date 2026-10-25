@@ -56,9 +56,9 @@ export function NewAssessmentForm({ studentId, onSuccess }: { studentId: string;
 
       <p className="text-xs font-medium text-[var(--muted)]">Fotos de evolução (opcional)</p>
       <div className="grid grid-cols-3 gap-3">
-        <FileUpload name="photoFrontUrl" label="Frente" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" camera />
-        <FileUpload name="photoSideUrl" label="Lado" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" camera />
-        <FileUpload name="photoBackUrl" label="Costas" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" camera />
+        <FileUpload name="photoFrontUrl" label="Frente" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" camera guide="front" />
+        <FileUpload name="photoSideUrl" label="Lado" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" camera guide="side" />
+        <FileUpload name="photoBackUrl" label="Costas" kind="assessment-photo" accept="image/png,image/jpeg,image/webp" preview="image" camera guide="back" />
       </div>
 
       <div>
