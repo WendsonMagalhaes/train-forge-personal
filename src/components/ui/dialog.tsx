@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 const SIZE_CLASS = {
@@ -58,11 +59,11 @@ export function Dialog({
           {trigger}
         </span>
       )}
-      {open && (
+      {open && createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
-            className={`relative z-10 max-h-[85vh] w-full overflow-y-auto rounded-t-[16px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:rounded-[var(--radius)] ${SIZE_CLASS[size]}`}
+            className={`relative z-10 max-h-[90dvh] w-full overflow-y-auto rounded-t-[16px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:rounded-[var(--radius)] ${SIZE_CLASS[size]}`}
           >
             <div className="-mt-1.5 mb-3 flex justify-center sm:hidden" aria-hidden="true">
               <span className="h-1 w-9 rounded-full bg-[var(--border)]" />
@@ -82,7 +83,8 @@ export function Dialog({
             </div>
             {children(() => setOpen(false))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

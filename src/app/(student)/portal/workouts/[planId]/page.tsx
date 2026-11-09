@@ -17,8 +17,7 @@ export default async function StudentWorkoutPlanPage({ params }: { params: Promi
       <Link href="/portal/workouts" className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--foreground)]">
         <ChevronLeft className="h-4 w-4" /> Meus treinos
       </Link>
-      <h1 className="font-display text-xl">{toDisplayText(plan.label)}</h1>
-      <TodayWorkoutClient planId={plan.id} blocks={blocks} />
+      <TodayWorkoutClient planId={plan.id} blocks={blocks} title={toDisplayText(plan.label)} />
     </div>
   );
 }

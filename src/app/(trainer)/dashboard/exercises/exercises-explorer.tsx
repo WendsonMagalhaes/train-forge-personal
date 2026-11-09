@@ -1,6 +1,7 @@
 // app/(trainer)/dashboard/exercises/exercises-explorer.tsx
 "use client";
 
+import { toDisplayText } from "@/lib/text-case";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
@@ -161,12 +162,12 @@ function ExerciseCard({
           </div>
 
           <div className="flex flex-col gap-1 text-xs text-[var(--muted)]">
-            {ex.muscleGroupDetail && <p>Músculo principal: {ex.muscleGroupDetail}</p>}
+            {ex.muscleGroupDetail && <p>Músculo principal: {toDisplayText(ex.muscleGroupDetail)}</p>}
             {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
-              <p>Secundários: {ex.secondaryMuscles.join(", ")}</p>
+              <p>Secundários: {ex.secondaryMuscles.map((m) => toDisplayText(m)).join(", ")}</p>
             )}
-            {ex.movementPattern && <p>Padrão de movimento: {ex.movementPattern}</p>}
-            {ex.equipment && <p>Equipamento: {ex.equipment}</p>}
+            {ex.movementPattern && <p>Padrão de movimento: {toDisplayText(ex.movementPattern)}</p>}
+            {ex.equipment && <p>Equipamento: {toDisplayText(ex.equipment)}</p>}
           </div>
 
           <span className="text-xs text-[var(--primary)]">Ver detalhes</span>
@@ -221,19 +222,19 @@ function ExerciseDetail({ exercise: ex, substitutes }: { exercise: Exercise; sub
         {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
           <div>
             <dt className="text-xs text-[var(--muted)]">Músculos secundários</dt>
-            <dd>{ex.secondaryMuscles.join(", ")}</dd>
+            <dd>{ex.secondaryMuscles.map((m) => toDisplayText(m)).join(", ")}</dd>
           </div>
         )}
         {ex.movementPattern && (
           <div>
             <dt className="text-xs text-[var(--muted)]">Padrão de movimento</dt>
-            <dd>{ex.movementPattern}</dd>
+            <dd>{toDisplayText(ex.movementPattern)}</dd>
           </div>
         )}
         {ex.equipment && (
           <div>
             <dt className="text-xs text-[var(--muted)]">Equipamento</dt>
-            <dd>{ex.equipment}</dd>
+            <dd>{toDisplayText(ex.equipment)}</dd>
           </div>
         )}
       </dl>

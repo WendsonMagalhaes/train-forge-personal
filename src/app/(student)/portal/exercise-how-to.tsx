@@ -1,5 +1,6 @@
 "use client";
 
+import { toDisplayText } from "@/lib/text-case";
 import { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +58,7 @@ function DirectMedia({ url, alt, onBothFailed }: { url: string; alt: string; onB
 
   if (stage === "image") {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={alt} onError={() => setStage("video")} className="w-full rounded-[var(--radius)] object-contain" />;
+    return <img src={url} alt={alt} onError={() => setStage("video")} className="mx-auto max-h-[55dvh] w-auto max-w-full rounded-[var(--radius)] object-contain" />;
   }
   return (
     <video
@@ -68,7 +69,7 @@ function DirectMedia({ url, alt, onBothFailed }: { url: string; alt: string; onB
       muted
       playsInline
       onError={onBothFailed}
-      className="w-full rounded-[var(--radius)] bg-black"
+      className="mx-auto max-h-[55dvh] w-full rounded-[var(--radius)] bg-black object-contain"
     />
   );
 }
@@ -102,7 +103,7 @@ function ExerciseHowToContent({ item }: { item: ExerciseInfo }) {
         <DirectMedia url={item.videoUrl!} alt={`Execução: ${item.exerciseName}`} onBothFailed={() => setDirectFailed(true)} />
       ) : item.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.imageUrl} alt={item.exerciseName} className="max-h-80 w-full rounded-[var(--radius)] object-cover" />
+        <img src={item.imageUrl} alt={item.exerciseName} className="mx-auto max-h-[55dvh] w-auto max-w-full rounded-[var(--radius)] object-contain" />
       ) : (
         <div className="flex aspect-video w-full items-center justify-center rounded-[var(--radius)] bg-[var(--background)]">
           <Dumbbell className="h-8 w-8 text-[var(--muted)]" />
@@ -122,9 +123,9 @@ function ExerciseHowToContent({ item }: { item: ExerciseInfo }) {
 
       <div className="flex flex-wrap gap-1.5">
         <Badge variant="outline">{MUSCLE_GROUP_LABEL[item.muscleGroup as keyof typeof MUSCLE_GROUP_LABEL] ?? item.muscleGroup}</Badge>
-        {item.muscleGroupDetail && <Badge variant="outline">{item.muscleGroupDetail}</Badge>}
-        {item.secondaryMuscles?.map((m) => <Badge key={m} variant="secondary">{m}</Badge>)}
-        {item.equipment && <Badge variant="secondary">{item.equipment}</Badge>}
+        {item.muscleGroupDetail && <Badge variant="outline">{toDisplayText(item.muscleGroupDetail)}</Badge>}
+        {item.secondaryMuscles?.map((m) => <Badge key={m} variant="secondary">{toDisplayText(m)}</Badge>)}
+        {item.equipment && <Badge variant="secondary">{toDisplayText(item.equipment)}</Badge>}
       </div>
 
       {item.instructions ? (

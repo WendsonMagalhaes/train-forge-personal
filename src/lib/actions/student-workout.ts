@@ -6,7 +6,8 @@ import {
   workoutLogs, workoutLogExercises, exerciseSubstitutes,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { eq, and, desc, like, asc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, like, asc, sql, inArray, gte } from "drizzle-orm";
+import { startOfWeekBR } from "@/lib/week";
 import { revalidatePath } from "next/cache";
 import { getStudentWorkoutAccess } from "@/lib/access/student-workout-access";
 import { parseDecimalBR } from "@/lib/numbers";
@@ -107,6 +108,18 @@ async function loadPlanBlocks(studentId: string, planId: string) {
   const blockExerciseIds = itemRows.map((i) => i.id);
   const exerciseIds = [...new Set(itemRows.map((i) => i.exerciseId))];
 
+  // Exercícios já marcados como feitos nesta semana (a marcação zera na segunda-feira).
+  const weekDoneRows = blockExerciseIds.length === 0 ? [] : await db
+    .select({ blockExerciseId: workoutLogExercises.blockExerciseId })
+    .from(workoutLogExercises)
+    .innerJoin(workoutLogs, eq(workoutLogs.id, workoutLogExercises.workoutLogId))
+    .where(and(
+      eq(workoutLogs.studentId, studentId),
+      gte(workoutLogs.performedAt, startOfWeekBR()),
+      inArray(workoutLogExercises.blockExerciseId, blockExerciseIds),
+    ));
+  const doneThisWeek = new Set(weekDoneRows.map((r) => r.blockExerciseId).filter(Boolean) as string[]);
+
   // Execuções mais recentes desses exercícios prescritos (histórico do aluno),
   // pra basear a sugestão de carga. Só consulta se a ficha tiver exercícios.
   const [history, substitutesByExercise] = await Promise.all([
@@ -157,6 +170,7 @@ async function loadPlanBlocks(studentId: string, planId: string) {
       );
       return {
         ...item,
+        doneThisWeek: doneThisWeek.has(item.id),
         lastLoadKg,
         lastRpe: last?.difficultyRpe ?? null,
         suggestedLoadKg,

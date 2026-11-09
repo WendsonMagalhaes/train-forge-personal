@@ -1,4 +1,5 @@
 "use client";
+import { toDisplayText } from "@/lib/text-case";
 import { NumberInput } from "@/components/ui/number-input";
 
 import { useEffect, useRef, useState } from "react";
@@ -73,10 +74,10 @@ function DirectMedia({ url, alt, onBothFailed }: { url: string; alt: string; onB
   const [stage, setStage] = useState<"image" | "video">("image");
   if (stage === "image") {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={alt} onError={() => setStage("video")} className="w-full rounded-[var(--radius)] object-contain" />;
+    return <img src={url} alt={alt} onError={() => setStage("video")} className="mx-auto max-h-[45dvh] w-auto max-w-full rounded-[var(--radius)] object-contain" />;
   }
   return (
-    <video src={url} controls autoPlay loop muted playsInline onError={onBothFailed} className="w-full rounded-[var(--radius)] bg-black" />
+    <video src={url} controls autoPlay loop muted playsInline onError={onBothFailed} className="mx-auto max-h-[45dvh] w-full rounded-[var(--radius)] bg-black object-contain" />
   );
 }
 
@@ -103,7 +104,7 @@ function ExerciseMedia({ item }: { item: ExerciseInfo }) {
   }
   if (item.imageUrl) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={item.imageUrl} alt={item.exerciseName} className="max-h-64 w-full rounded-[var(--radius)] object-cover" />;
+    return <img src={item.imageUrl} alt={item.exerciseName} className="mx-auto max-h-[45dvh] w-auto max-w-full rounded-[var(--radius)] object-contain" />;
   }
   return (
     <div className="flex aspect-video w-full items-center justify-center rounded-[var(--radius)] bg-[var(--background)]">
@@ -156,9 +157,9 @@ export function ExerciseInfoTrigger({ item, children }: { item: ExerciseInfo; ch
 
           <div className="flex flex-wrap gap-1.5">
             <Badge variant="outline">{MUSCLE_GROUP_LABEL[item.muscleGroup as keyof typeof MUSCLE_GROUP_LABEL] ?? item.muscleGroup}</Badge>
-            {item.muscleGroupDetail && <Badge variant="outline">{item.muscleGroupDetail}</Badge>}
-            {item.secondaryMuscles?.map((m) => <Badge key={m} variant="secondary">{m}</Badge>)}
-            {item.equipment && <Badge variant="secondary">{item.equipment}</Badge>}
+            {item.muscleGroupDetail && <Badge variant="outline">{toDisplayText(item.muscleGroupDetail)}</Badge>}
+            {item.secondaryMuscles?.map((m) => <Badge key={m} variant="secondary">{toDisplayText(m)}</Badge>)}
+            {item.equipment && <Badge variant="secondary">{toDisplayText(item.equipment)}</Badge>}
           </div>
 
           {item.instructions && (
@@ -208,7 +209,7 @@ function SubstituteRow({ substitute }: { substitute: SubstituteExercise }) {
         <ExerciseThumbnail item={asExerciseInfo} className="h-10 w-10" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{substitute.exerciseName}</p>
-          {substitute.equipment && <p className="truncate text-xs text-[var(--muted)]">{substitute.equipment}</p>}
+          {substitute.equipment && <p className="truncate text-xs text-[var(--muted)]">{toDisplayText(substitute.equipment)}</p>}
         </div>
       </div>
     </ExerciseInfoTrigger>

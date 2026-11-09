@@ -4,7 +4,12 @@
 //   mantendo em minúsculas as partículas do português ("de", "da", "do", "e"...).
 // E-mail NÃO entra aqui: o login compara o e-mail exatamente como está gravado.
 
-const PARTICLES = new Set(["de", "da", "do", "das", "dos", "e"]);
+// Palavras de ligação que ficam sempre em minúsculo (exceto quando iniciam o texto):
+// "Puxada na Polia Alta com Pegada Fechada", "Costas e Bíceps", "Treino de Pernas".
+const PARTICLES = new Set([
+  "de", "da", "do", "das", "dos", "e", "com", "na", "no", "nas", "nos",
+  "em", "por", "para", "pelo", "pela", "ao", "aos", "a", "à", "as", "o", "os", "ou", "sem",
+]);
 
 /** Limpa espaços sobrando e converte para maiúsculas antes de gravar no banco. */
 export function toDbText(value: string): string {
@@ -19,8 +24,8 @@ export function toDbTextOrNull(value: string | null | undefined): string | null 
 }
 
 function capitalize(word: string): string {
-  // inicial maiúscula também depois de hífen e barra: "Silva-Souza", "Glúteos/Posterior"
-  return word.replace(/(^|[-/])(\p{L})/gu, (_m, sep: string, ch: string) => sep + ch.toLocaleUpperCase("pt-BR"));
+  // inicial maiúscula também depois de hífen, barra, parêntese e aspas: "Silva-Souza", "Glúteos/Posterior", "(Alongamento"
+  return word.replace(/(^|[-/(\[“"])(\p{L})/gu, (_m, sep: string, ch: string) => sep + ch.toLocaleUpperCase("pt-BR"));
 }
 
 /** Converte o texto guardado no banco para exibição em UpperCamelCase. */
