@@ -7,11 +7,12 @@ import { buildBrandStyle } from "@/lib/theme/brand-color";
 import { OfflineBanner } from "@/components/pwa/offline-banner";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { PortalBottomNav } from "@/components/layout/portal-bottom-nav";
+import { AppBottomNav } from "@/components/layout/app-bottom-nav";
 import { Logo } from "@/components/layout/logo";
 import { BrandingCache } from "@/components/theme/branding-cache";
 import { UserMenu } from "@/components/layout/user-menu";
 import { logoutAction } from "@/lib/actions/auth";
+import { Home, Trophy, MessageSquare, LineChart, CalendarDays, Salad, Wallet } from "lucide-react";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -62,7 +63,20 @@ export default async function StudentLayout({ children }: { children: React.Reac
         {children}
       </main>
 
-      <PortalBottomNav />
+      <AppBottomNav
+        variant="column"
+        primaryCount={4}
+        title="Mais"
+        items={[
+          { href: "/portal", label: "Hoje", icon: <Home className="h-5 w-5" /> },
+          { href: "/portal/grupos", label: "Grupos", icon: <Trophy className="h-5 w-5" /> },
+          { href: "/portal/chat", label: "Chat", icon: <MessageSquare className="h-5 w-5" /> },
+          { href: "/portal/progress", label: "Evolução", icon: <LineChart className="h-5 w-5" /> },
+          { href: "/portal/schedule", label: "Agenda", icon: <CalendarDays className="h-5 w-5" /> },
+          { href: "/portal/nutrition", label: "Nutrição", icon: <Salad className="h-5 w-5" /> },
+          { href: "/portal/finance", label: "Financeiro", icon: <Wallet className="h-5 w-5" /> },
+        ]}
+      />
     </div>
   );
 }

@@ -25,6 +25,7 @@ export function AppBottomNav({
   primaryCount = 4,
   title,
   extra,
+  variant = "app",
 }: {
   items: AppNavItem[];
   primaryCount?: number;
@@ -32,7 +33,13 @@ export function AppBottomNav({
   title?: string;
   /** Conteúdo extra no fim do sheet (ex.: botão de sair) */
   extra?: ReactNode;
+  /**
+   * "app": largura total, só no celular (painel do personal e admin).
+   * "column": fica na mesma coluna central do portal do aluno, em todas as telas.
+   */
+  variant?: "app" | "column";
 }) {
+  const column = variant === "column";
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -53,7 +60,10 @@ export function AppBottomNav({
   return (
     <>
       <nav
-        className="tf-hairline fixed bottom-0 left-0 right-0 z-20 flex items-stretch justify-around bg-[var(--surface)]/90 backdrop-blur-md md:hidden"
+        className={cn(
+          "tf-hairline fixed bottom-0 z-20 flex items-stretch justify-around bg-[var(--surface)]/90 backdrop-blur-md",
+          column ? "left-1/2 w-full max-w-md -translate-x-1/2" : "left-0 right-0 md:hidden"
+        )}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {primary.map((item) => {
@@ -89,10 +99,13 @@ export function AppBottomNav({
       </nav>
 
       {sheetOpen && (
-        <div className="fixed inset-0 z-30 md:hidden">
+        <div className={cn("fixed inset-0 z-30", !column && "md:hidden")}>
           <div className="absolute inset-0 bg-black/60" onClick={() => setSheetOpen(false)} aria-hidden="true" />
           <div
-            className="tf-hairline absolute bottom-0 left-0 right-0 rounded-t-2xl border bg-[var(--surface)] p-4"
+            className={cn(
+              "tf-hairline absolute bottom-0 rounded-t-2xl border bg-[var(--surface)] p-4",
+              column ? "left-1/2 w-full max-w-md -translate-x-1/2" : "left-0 right-0"
+            )}
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
           >
             <div className="mb-3 flex items-center justify-between">
@@ -128,6 +141,6 @@ export function AppBottomNav({
 }
 
 function isActive(pathname: string, href: string) {
-  if (href === "/dashboard" || href === "/admin") return pathname === href;
+  if (href === "/dashboard" || href === "/admin" || href === "/portal") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
