@@ -83,9 +83,16 @@ export function FirstAccessPanel({ studentId, initial }: { studentId: string; in
           </span>
         }
         actions={
-          <Button type="button" size="sm" variant="secondary" onClick={() => setConfirmOpen(true)} disabled={busy}>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => setConfirmOpen(true)}
+            disabled={busy}
+            aria-label="Gerar nova senha"
+          >
             <RefreshCw className="h-4 w-4" />
-            Gerar nova senha
+            <span className="hidden sm:inline">Gerar nova senha</span>
           </Button>
         }
       >

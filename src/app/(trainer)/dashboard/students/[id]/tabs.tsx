@@ -21,7 +21,7 @@ export function StudentTabs({ studentId }: { studentId: string }) {
   ];
 
   return (
-    <div className="tf-hairline -mx-4 flex gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+    <div className="tf-hairline -mx-4 flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
       {tabs.map((tab) => {
         const active = pathname === tab.href;
         return (

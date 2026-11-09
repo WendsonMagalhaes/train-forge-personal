@@ -86,8 +86,8 @@ export function WorkoutsClient({
   const refresh = () => router.refresh();
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <div className="flex flex-col gap-5">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="flex min-w-0 flex-col gap-5">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-2xl">Ciclos de treino</h2>
           <NewCycleButton studentId={studentId} onDone={refresh} />
@@ -175,12 +175,12 @@ function CycleCard({
 
   return (
     <Panel>
-      <PanelHeader>
-        <div className="flex items-center gap-2">
-          <PanelTitle>{toDisplayText(cycle.name)}</PanelTitle>
+      <PanelHeader className="flex-wrap gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <PanelTitle className="min-w-0 break-words">{toDisplayText(cycle.name)}</PanelTitle>
           {cycle.isActive && <Badge variant="success">Ativo</Badge>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {!cycle.isActive && (
             <Button
               size="sm" variant="secondary" disabled={pending}
@@ -195,7 +195,7 @@ function CycleCard({
           )}
           <ConfirmDeleteButton
             itemLabel={cycle.name}
-            trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>}
+            trigger={<button className="tf-tap flex h-8 w-8 items-center justify-center rounded-[var(--radius)] sm:h-9 sm:w-9 text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir"><Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></button>}
             onConfirm={async () => { await deleteCycle(studentId, cycle.id); onChange(); }}
           />
         </div>
@@ -361,10 +361,10 @@ function NewPlanForm({ studentId, cycleId, onSuccess }: { studentId: string; cyc
 function ExerciseThumb({ item }: { item: { imageUrl: string | null; name: string } }) {
   if (item.imageUrl) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={item.imageUrl} alt={item.name} className="h-10 w-10 shrink-0 rounded-[var(--radius)] object-cover" />;
+    return <img src={item.imageUrl} alt={item.name} className="h-8 w-8 shrink-0 rounded-[var(--radius)] object-cover sm:h-10 sm:w-10" />;
   }
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[var(--background)]">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[var(--background)] sm:h-10 sm:w-10">
       <Dumbbell className="h-4 w-4 text-[var(--muted)]" />
     </div>
   );
@@ -392,7 +392,7 @@ function PlanCard({
         actions={
           <ConfirmDeleteButton
             itemLabel={plan.label}
-            trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>}
+            trigger={<button className="tf-tap flex h-8 w-8 items-center justify-center rounded-[var(--radius)] sm:h-9 sm:w-9 text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir"><Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></button>}
             onConfirm={async () => { await deletePlan(studentId, plan.id); onChange(); }}
           />
         }
@@ -434,36 +434,36 @@ function BlockRow({
   const isMulti = block.exercises.length > 1;
 
   return (
-    <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <GripVertical className="h-4 w-4 text-[var(--muted)]" />
-          <Badge variant={block.seriesType === "simples" ? "outline" : "default"}>
+    <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] p-2.5 sm:p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <GripVertical className="hidden h-4 w-4 shrink-0 text-[var(--muted)] sm:block" />
+          <Badge variant={block.seriesType === "simples" ? "outline" : "default"} className="px-1.5 text-[10px] sm:px-2 sm:text-[11px]">
             {index + 1}. {SERIES_TYPE_LABEL[block.seriesType]}
           </Badge>
-          <span className="text-xs text-[var(--muted)]">
+          <span className="text-[11px] text-[var(--muted)] sm:text-xs">
             {block.rounds}x {block.restSeconds ? `· ${block.restSeconds}s desc.` : ""}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <EditBlockButton studentId={studentId} block={block} onChange={onChange} />
           <ConfirmDeleteButton
             itemLabel={SERIES_TYPE_LABEL[block.seriesType]}
-            trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir bloco"><Trash2 className="h-4 w-4" /></button>}
+            trigger={<button className="tf-tap flex h-8 w-8 items-center justify-center rounded-[var(--radius)] sm:h-9 sm:w-9 text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir bloco"><Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></button>}
             onConfirm={async () => { await deleteBlock(studentId, block.id); onChange(); }}
           />
         </div>
       </div>
 
-      {block.notes && <p className="mb-2 text-xs text-[var(--muted)]">{toDisplayText(block.notes)}</p>}
+      {block.notes && <p className="mb-2 text-[11px] text-[var(--muted)] sm:text-xs">{toDisplayText(block.notes)}</p>}
 
       <div className={isMulti ? "flex flex-col gap-2 border-l-2 border-[var(--border)] pl-3" : "flex flex-col gap-2"}>
         {block.exercises.map((ex) => (
-          <div key={ex.id} className="flex items-center gap-2">
+          <div key={ex.id} className="flex items-center gap-1.5 sm:gap-2">
             <ExerciseThumb item={{ imageUrl: ex.imageUrl, name: ex.exerciseName }} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm">{toDisplayText(ex.exerciseName)}</p>
-              <p className="truncate text-xs text-[var(--muted)]">
+              <p className="truncate text-[13px] sm:text-sm">{toDisplayText(ex.exerciseName)}</p>
+              <p className="truncate text-[11px] text-[var(--muted)] sm:text-xs">
                 {ex.holdSeconds ? `${ex.holdSeconds}s` : ex.reps || "—"}
                 {ex.notes ? ` ${toDisplayText(ex.notes)}` : ""}
                 {ex.loadKg ? ` · ${ex.loadKg}kg` : ""}
@@ -479,10 +479,10 @@ function BlockRow({
                 type="button"
                 title="Remover exercício"
                 aria-label={`Remover ${ex.exerciseName} do bloco`}
-                className="tf-tap flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500"
+                className="tf-tap flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius)] sm:h-9 sm:w-9 text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500"
                 onClick={async () => { await removeBlockExercise(studentId, ex.id); onChange(); }}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             ) : (
               <ConfirmDeleteButton
@@ -494,9 +494,9 @@ function BlockRow({
                     type="button"
                     title="Excluir bloco"
                     aria-label="Excluir bloco"
-                    className="tf-tap flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500"
+                    className="tf-tap flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius)] sm:h-9 sm:w-9 text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </button>
                 }
                 onConfirm={async () => { await deleteBlock(studentId, block.id); onChange(); }}
@@ -540,7 +540,7 @@ function EditBlockButton({
     <Dialog
       title="Editar bloco"
       description={SERIES_TYPE_LABEL[block.seriesType]}
-      trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--primary)]" type="button" aria-label="Editar bloco"><Pencil className="h-4 w-4" /></button>}
+      trigger={<button className="tf-tap flex h-8 w-8 items-center justify-center rounded-[var(--radius)] sm:h-9 sm:w-9 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--primary)]" type="button" aria-label="Editar bloco"><Pencil className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></button>}
       open={open}
       onOpenChange={setOpen}
     >
@@ -777,9 +777,9 @@ function EditExerciseButton({
         <button
           type="button"
           aria-label={`Editar ${item.exerciseName}`}
-          className="tf-tap flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--primary)]"
+          className="tf-tap flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius)] sm:h-9 sm:w-9 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--primary)]"
         >
-          <Pencil className="h-4 w-4" />
+          <Pencil className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </button>
       }
       open={open}
