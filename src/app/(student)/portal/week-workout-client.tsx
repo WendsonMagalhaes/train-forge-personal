@@ -1,5 +1,6 @@
 "use client";
 
+import { toDisplayText } from "@/lib/text-case";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Panel } from "@/components/ui/panel";
 import { WEEKDAY_OPTIONS } from "@/lib/constants";
@@ -104,7 +105,7 @@ export function WeekWorkoutClient({
                 isTodayCell && !active && "text-[var(--foreground)] ring-1 ring-inset ring-[var(--primary)]"
               )}
             >
-              <span className="text-[10px] font-medium uppercase tracking-wider">{SHORT_LABEL[code]}</span>
+              <span className="text-[10px] font-medium tracking-wider">{SHORT_LABEL[code]}</span>
               <span className="font-display text-base leading-none">{dayNumbers?.[code] ?? " "}</span>
               <span
                 className={cn(
@@ -131,7 +132,7 @@ export function WeekWorkoutClient({
             const blocks = blocksByPlan[plan.id] ?? [];
             return (
               <section key={plan.id} className="flex flex-col gap-3">
-                <p className="text-sm font-medium text-[var(--muted)]">{plan.label}</p>
+                <p className="text-sm font-medium text-[var(--muted)]">{toDisplayText(plan.label)}</p>
                 {blocks.length === 0 ? (
                   <Panel>
                     <p className="text-sm text-[var(--muted)]">Esta ficha ainda não tem exercícios cadastrados.</p>

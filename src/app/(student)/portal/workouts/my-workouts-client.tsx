@@ -1,5 +1,6 @@
 "use client";
 
+import { toDisplayText } from "@/lib/text-case";
 import Link from "next/link";
 import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
@@ -23,8 +24,8 @@ export function MyWorkoutsClient({ cycle, plans }: { cycle: Cycle; plans: Plan[]
       <div>
         <h1 className="font-display text-xl">Meus treinos</h1>
         <p className="mt-0.5 text-sm text-[var(--muted)]">
-          {cycle.name}
-          {cycle.goal && <> · {cycle.goal}</>}
+{toDisplayText(cycle.name)}
+          {cycle.goal && <> · {toDisplayText(cycle.goal)}</>}
         </p>
       </div>
 
@@ -45,7 +46,7 @@ export function MyWorkoutsClient({ cycle, plans }: { cycle: Cycle; plans: Plan[]
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="font-medium">{plan.label}</span>
+                      <span className="font-medium">{toDisplayText(plan.label)}</span>
                       {isToday && <Badge variant="success">Hoje</Badge>}
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-[var(--muted)]">

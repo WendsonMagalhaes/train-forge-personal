@@ -10,11 +10,12 @@ import { OfflineBanner } from "@/components/pwa/offline-banner";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Logo } from "@/components/layout/logo";
+import { BrandingCache } from "@/components/theme/branding-cache";
 import { Avatar } from "@/components/layout/avatar";
 import { UserMenu } from "@/components/layout/user-menu";
 import { logoutAction } from "@/lib/actions/auth";
 import {
-  Users, Dumbbell, LineChart, Wallet, CalendarDays, MessageSquare, BarChart3, LogOut, Palette, UserCircle,
+  Users, Dumbbell, LineChart, Wallet, CalendarDays, MessageSquare, BarChart3, LogOut, Palette, UserCircle, ClipboardList, Trophy,
 } from "lucide-react";
 
 type NavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
@@ -27,6 +28,8 @@ const nav: NavItem[] = [
   { href: "/dashboard/schedule", label: "Agenda", icon: CalendarDays },
   { href: "/dashboard/chat", label: "Mensagens", icon: MessageSquare },
   { href: "/dashboard/exercises", label: "Exercícios", icon: Dumbbell },
+  { href: "/dashboard/treinos-prontos", label: "Treinos prontos", icon: ClipboardList },
+  { href: "/dashboard/grupos", label: "Grupos", icon: Trophy },
   { href: "/dashboard/assessments", label: "Avaliações", icon: LineChart },
   { href: "/dashboard/finance", label: "Financeiro", icon: Wallet },
   { href: "/dashboard/profile", label: "Perfil", icon: UserCircle },
@@ -64,6 +67,7 @@ export default async function TrainerLayout({ children }: { children: React.Reac
 
   return (
     <div className="flex min-h-screen" style={buildBrandStyle(branding.brandColor)}>
+      <BrandingCache branding={branding} />
       {/* Sidebar — visível a partir de md (tablet/desktop) */}
       <aside className="hidden w-64 shrink-0 border-r border-[var(--border)] bg-[var(--surface)] p-5 md:flex md:flex-col">
         <div className="mb-8">

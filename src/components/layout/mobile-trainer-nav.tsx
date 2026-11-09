@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Users, Dumbbell, LineChart, Wallet, CalendarDays, MessageSquare, BarChart3, Palette, Menu, X,
+  Users, Dumbbell, LineChart, Wallet, CalendarDays, MessageSquare, BarChart3, Palette, Menu, X, ClipboardList, Trophy,
 } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 
@@ -12,6 +12,8 @@ const nav = [
   { href: "/dashboard", label: "Visão Geral", icon: BarChart3 },
   { href: "/dashboard/students", label: "Alunos", icon: Users },
   { href: "/dashboard/exercises", label: "Exercícios", icon: Dumbbell },
+  { href: "/dashboard/treinos-prontos", label: "Treinos prontos", icon: ClipboardList },
+  { href: "/dashboard/grupos", label: "Grupos", icon: Trophy },
   { href: "/dashboard/assessments", label: "Avaliações", icon: LineChart },
   { href: "/dashboard/schedule", label: "Agenda", icon: CalendarDays },
   { href: "/dashboard/finance", label: "Financeiro", icon: Wallet },

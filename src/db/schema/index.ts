@@ -2,6 +2,8 @@ export * from "./users";
 export * from "./students";
 export * from "./assessments";
 export * from "./workouts";
+export * from "./workout-templates";
+export * from "./challenge-groups";
 export * from "./execution";
 export * from "./nutrition";
 export * from "./finance";

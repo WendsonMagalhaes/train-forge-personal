@@ -1,9 +1,9 @@
 // v4: páginas de treino deixaram de ser guardadas no cache (ver NEVER_CACHE_WORKOUT).
-const CACHE = "trainforge-v4";
+const CACHE = "trainforge-v5";
 // Shell mínimo do app inteiro (login + fallback offline). As áreas do personal
 // (/dashboard), do admin (/admin) e do aluno (/portal) entram no cache
 // dinamicamente conforme o usuário navega — ver fetch handler abaixo.
-const SHELL = ["/login", "/manifest.json"];
+const SHELL = ["/login", "/offline", "/manifest.json"];
 
 // Fichas de treino não podem ficar em cache: um aluno bloqueado por
 // mensalidade em atraso não pode ver a ficha offline a partir de uma cópia antiga.
@@ -29,7 +29,7 @@ self.addEventListener("activate", (event) => {
 // ou portal do aluno) — garante que o que sobe pro ar aparece na hora no PWA.
 // Guarda uma cópia de cada página visitada com sucesso pra funcionar offline
 // depois, exceto as fichas de treino; se a rede falhar e não tiver essa página
-// em cache, cai no login.
+// em cache, mostra a tela offline com a marca do personal.
 self.addEventListener("fetch", (event) => {
   if (event.request.mode !== "navigate") return;
 
@@ -37,7 +37,7 @@ self.addEventListener("fetch", (event) => {
 
   if (isWorkoutRoute(pathname)) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match("/login"))
+      fetch(event.request).catch(() => caches.match("/offline"))
     );
     return;
   }
@@ -49,7 +49,7 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE).then((cache) => cache.put(event.request, copy));
         return response;
       })
-      .catch(() => caches.match(event.request).then((r) => r || caches.match("/login")))
+      .catch(() => caches.match(event.request).then((r) => r || caches.match("/offline")))
   );
 });
 

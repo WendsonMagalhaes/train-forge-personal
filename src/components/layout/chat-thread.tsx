@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 type MessageRow = {
   id: string;
   senderId: string;
+  /** Nome de quem enviou. Só aparece em chats de grupo (várias pessoas). */
+  senderName?: string;
   content: string;
   createdAt: Date;
   readAt: Date | null;
@@ -80,6 +82,9 @@ export function ChatThread({
                     mine ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "tf-panel"
                   )}
                 >
+                  {!mine && m.senderName && (
+                    <p className="mb-0.5 text-[11px] font-medium text-[var(--primary)]">{m.senderName}</p>
+                  )}
                   <p className="whitespace-pre-wrap break-words">{m.content}</p>
                   <p className={cn("mt-1 text-[10px] opacity-70", mine ? "text-right" : "")}>
                     {new Date(m.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}

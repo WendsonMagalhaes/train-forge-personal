@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LineChart, CalendarDays, MessageSquare, Salad, Wallet } from "lucide-react";
+import { Home, LineChart, CalendarDays, MessageSquare, Salad, Trophy, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LinkStatusSwap } from "@/components/ui/link-status";
 
@@ -12,6 +12,7 @@ const nav = [
   { href: "/portal/nutrition", label: "Nutrição", icon: Salad },
   { href: "/portal/finance", label: "Financeiro", icon: Wallet },
   { href: "/portal/schedule", label: "Agenda", icon: CalendarDays },
+  { href: "/portal/grupos", label: "Grupos", icon: Trophy },
   { href: "/portal/chat", label: "Chat", icon: MessageSquare },
 ];
 

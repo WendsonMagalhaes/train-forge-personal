@@ -9,6 +9,7 @@ import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { PortalBottomNav } from "@/components/layout/portal-bottom-nav";
 import { Logo } from "@/components/layout/logo";
+import { BrandingCache } from "@/components/theme/branding-cache";
 import { UserMenu } from "@/components/layout/user-menu";
 import { logoutAction } from "@/lib/actions/auth";
 
@@ -33,6 +34,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col" style={buildBrandStyle(branding.brandColor)}>
+      <BrandingCache branding={branding} />
       <div className="tf-hairline sticky top-0 z-20 bg-[var(--surface)]/90 backdrop-blur-md">
         <header
           className="flex items-center justify-between px-5 py-4"

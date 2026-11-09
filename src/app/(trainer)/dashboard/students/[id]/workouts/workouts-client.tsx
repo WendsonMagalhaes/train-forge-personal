@@ -30,6 +30,8 @@ import {
 import { sortPlansByWeekday } from "@/lib/workout-schedule";
 import { Plus, Trash2, Pencil, Dumbbell, GripVertical, X } from "lucide-react";
 import { WorkoutSummarySidebar } from "./workout-summary-sidebar";
+import { ApplyTemplatesButton, SavePlanAsTemplateButton } from "./plan-template-dialogs";
+import type { WorkoutTemplateItem } from "@/lib/actions/workout-templates";
 
 type FormState = { error?: string; success?: boolean };
 
@@ -80,8 +82,8 @@ export type ExerciseLib = {
 const WEEKDAY_LABEL = Object.fromEntries(WEEKDAY_OPTIONS.map((w) => [w.value, w.label]));
 
 export function WorkoutsClient({
-  studentId, cycles, exerciseLibrary,
-}: { studentId: string; cycles: Cycle[]; exerciseLibrary: ExerciseLib[] }) {
+  studentId, cycles, exerciseLibrary, templates,
+}: { studentId: string; cycles: Cycle[]; exerciseLibrary: ExerciseLib[]; templates: WorkoutTemplateItem[] }) {
   const router = useRouter();
   const refresh = () => router.refresh();
 
@@ -102,7 +104,7 @@ export function WorkoutsClient({
         )}
 
         {cycles.map((cycle) => (
-          <CycleCard key={cycle.id} studentId={studentId} cycle={cycle} exerciseLibrary={exerciseLibrary} onChange={refresh} />
+          <CycleCard key={cycle.id} studentId={studentId} cycle={cycle} exerciseLibrary={exerciseLibrary} templates={templates} onChange={refresh} />
         ))}
       </div>
 
@@ -168,8 +170,8 @@ function NewCycleForm({ studentId, onSuccess }: { studentId: string; onSuccess: 
 }
 
 function CycleCard({
-  studentId, cycle, exerciseLibrary, onChange,
-}: { studentId: string; cycle: Cycle; exerciseLibrary: ExerciseLib[]; onChange: () => void }) {
+  studentId, cycle, exerciseLibrary, templates, onChange,
+}: { studentId: string; cycle: Cycle; exerciseLibrary: ExerciseLib[]; templates: WorkoutTemplateItem[]; onChange: () => void }) {
   const [pending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -208,7 +210,7 @@ function CycleCard({
 
       <div className="flex flex-col gap-4">
         {sortPlansByWeekday(cycle.plans).map((plan) => (
-          <PlanCard key={plan.id} studentId={studentId} plan={plan} exerciseLibrary={exerciseLibrary} onChange={onChange} />
+          <PlanCard key={plan.id} studentId={studentId} plan={plan} exerciseLibrary={exerciseLibrary} templates={templates} onChange={onChange} />
         ))}
         <NewPlanButton studentId={studentId} cycleId={cycle.id} onDone={onChange} />
       </div>
@@ -371,8 +373,8 @@ function ExerciseThumb({ item }: { item: { imageUrl: string | null; name: string
 }
 
 function PlanCard({
-  studentId, plan, exerciseLibrary, onChange,
-}: { studentId: string; plan: Plan; exerciseLibrary: ExerciseLib[]; onChange: () => void }) {
+  studentId, plan, exerciseLibrary, templates, onChange,
+}: { studentId: string; plan: Plan; exerciseLibrary: ExerciseLib[]; templates: WorkoutTemplateItem[]; onChange: () => void }) {
   const days = (plan.weekdays || "").split(",").filter(Boolean);
 
   return (
@@ -422,6 +424,12 @@ function PlanCard({
       ) : (
         <AddBlockButton studentId={studentId} planId={plan.id} exerciseLibrary={exerciseLibrary} onDone={onChange} />
       )}
+      <div className="mt-2 flex flex-wrap gap-2">
+        <ApplyTemplatesButton studentId={studentId} planId={plan.id} templates={templates} onDone={onChange} />
+        {plan.blocks.length > 0 && (
+          <SavePlanAsTemplateButton studentId={studentId} planId={plan.id} onDone={onChange} />
+        )}
+      </div>
       </Collapsible>
     </div>
   );
@@ -594,8 +602,7 @@ function AddBlockButton({
       >
         {() => (
           <AddExercisesForm
-            studentId={studentId}
-            planId={planId}
+            save={(inputs) => createBlocksWithExercises(studentId, planId, inputs)}
             exerciseLibrary={exerciseLibrary}
             onSuccess={() => { setOpenSimple(false); onDone(); }}
           />
@@ -623,15 +630,43 @@ function AddBlockButton({
   );
 }
 
-type CardState = SlotState & { seriesType: SeriesType; rounds: string; restSeconds: string };
+export type CardState = SlotState & { seriesType: SeriesType; rounds: string; restSeconds: string };
 
-function emptyCard(): CardState {
+/** Converte os cards de exercício simples em entradas de bloco (valores ainda como texto). */
+export function buildSimpleBlockInputs(cards: CardState[]): CreateBlockInput[] {
+  return cards.map((c) => {
+    const timed = SERIES_TYPES_TIME_BASED.includes(c.seriesType);
+    return {
+      seriesType: c.seriesType,
+      rounds: c.rounds,
+      restSeconds: c.restSeconds || undefined,
+      exercises: [{
+        exerciseId: c.exerciseId,
+        reps: timed ? undefined : c.reps || undefined,
+        loadKg: c.loadKg || undefined,
+        tempo: c.tempo || undefined,
+        holdSeconds: timed && c.holdSeconds ? c.holdSeconds : undefined,
+        notes: c.notes || undefined,
+      }],
+    };
+  });
+}
+
+export function emptyCard(): CardState {
   return { ...emptySlot(), seriesType: "simples", rounds: "3", restSeconds: "60" };
 }
 
-function AddExercisesForm({
-  studentId, planId, exerciseLibrary, onSuccess,
-}: { studentId: string; planId: string; exerciseLibrary: ExerciseLib[]; onSuccess: () => void }) {
+/**
+ * Formulário de exercícios simples (um exercício por bloco). Usado tanto na
+ * ficha do aluno quanto nos treinos prontos: quem usa decide como salvar.
+ */
+export function AddExercisesForm({
+  save, exerciseLibrary, onSuccess,
+}: {
+  save: (inputs: CreateBlockInput[]) => Promise<{ error?: string; success?: boolean } | undefined>;
+  exerciseLibrary: ExerciseLib[];
+  onSuccess: () => void;
+}) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -654,26 +689,11 @@ function AddExercisesForm({
     }
 
     // Cada card vira um bloco com as próprias séries, descanso e tipo.
-    const inputs: CreateBlockInput[] = cards.map((c) => {
-      const timed = SERIES_TYPES_TIME_BASED.includes(c.seriesType);
-      return {
-        seriesType: c.seriesType,
-        rounds: c.rounds,
-        restSeconds: c.restSeconds || undefined,
-        exercises: [{
-          exerciseId: c.exerciseId,
-          reps: timed ? undefined : c.reps || undefined,
-          loadKg: c.loadKg || undefined,
-          tempo: c.tempo || undefined,
-          holdSeconds: timed && c.holdSeconds ? c.holdSeconds : undefined,
-          notes: c.notes || undefined,
-        }],
-      };
-    });
+    const inputs = buildSimpleBlockInputs(cards);
 
     const count = cards.length;
     startTransition(async () => {
-      const res = await createBlocksWithExercises(studentId, planId, inputs);
+      const res = await save(inputs);
       if (res?.error) {
         setError(res.error);
       } else {
@@ -711,7 +731,7 @@ function AddExercisesForm({
   );
 }
 
-function ExerciseCard({
+export function ExerciseCard({
   index, card, exerciseLibrary, onChange, onRemove,
 }: {
   index: number;

@@ -1,5 +1,6 @@
 "use client";
 
+import { toDisplayText } from "@/lib/text-case";
 import * as React from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
@@ -154,7 +155,7 @@ export function NotificationBell({
                     <span className="min-w-0 flex-1">
                       <span className="flex items-start justify-between gap-2">
                         <span className={cn("text-sm", !n.read ? "font-medium" : "font-normal text-[var(--foreground)]")}>
-                          {n.title}
+                          {toDisplayText(n.title)}
                         </span>
                         {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--tf-ember)]" />}
                       </span>

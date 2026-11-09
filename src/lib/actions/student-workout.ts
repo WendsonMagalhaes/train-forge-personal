@@ -10,6 +10,7 @@ import { eq, and, desc, like, asc, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getStudentWorkoutAccess } from "@/lib/access/student-workout-access";
 import { parseDecimalBR } from "@/lib/numbers";
+import { toDisplayText } from "@/lib/text-case";
 
 const WEEKDAY_CODES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
@@ -89,7 +90,7 @@ async function loadPlanBlocks(studentId: string, planId: string) {
       holdSeconds: workoutBlockExercises.holdSeconds,
       setsDetail: workoutBlockExercises.setsDetail,
       exerciseId: exercises.id,
-      exerciseName: exercises.name,
+      exerciseName: sql<string>`${exercises.name}`.mapWith((v) => toDisplayText(String(v))),
       videoUrl: exercises.videoUrl,
       imageUrl: exercises.imageUrl,
       muscleGroup: exercises.muscleGroup,
@@ -187,7 +188,7 @@ async function loadSubstitutesFor(exerciseIds: string[]) {
     .select({
       exerciseId: exerciseSubstitutes.exerciseId,
       id: exercises.id,
-      exerciseName: exercises.name,
+      exerciseName: sql<string>`${exercises.name}`.mapWith((v) => toDisplayText(String(v))),
       imageUrl: exercises.imageUrl,
       videoUrl: exercises.videoUrl,
       muscleGroup: exercises.muscleGroup,
@@ -247,7 +248,7 @@ export async function listMyWorkoutPlans() {
   const plans = await db
     .select({
       id: workoutPlans.id,
-      label: workoutPlans.label,
+      label: sql<string>`${workoutPlans.label}`.mapWith((v) => toDisplayText(String(v))),
       weekdays: workoutPlans.weekdays,
       orderIndex: workoutPlans.orderIndex,
       exerciseCount: sql<number>`count(distinct ${workoutBlockExercises.id})`.mapWith(Number),

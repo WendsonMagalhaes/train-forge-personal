@@ -1,5 +1,6 @@
 "use client";
 
+import { toDisplayText } from "@/lib/text-case";
 import { useState } from "react";
 import { logWorkoutCompletion, logExerciseFeedback } from "@/lib/actions/student-workout";
 import { Button } from "@/components/ui/button";
@@ -138,7 +139,7 @@ function BlockCard({
         </span>
       </div>
 
-      {block.notes && <p className="mb-3 text-xs text-[var(--muted)]">{block.notes}</p>}
+      {block.notes && <p className="mb-3 text-xs text-[var(--muted)]">{toDisplayText(block.notes)}</p>}
 
       <div className={isMultiExercise ? "flex flex-col gap-3 border-l-2 border-[var(--border)] pl-3" : ""}>
         {block.items.map((item) => (

@@ -1,3 +1,4 @@
+import { toDisplayText } from "@/lib/text-case";
 import { getMyProfile } from "@/lib/actions/profile";
 import { AvatarForm } from "@/components/layout/avatar-form";
 import { StudentInfoForm } from "./student-info-form";
@@ -22,7 +23,7 @@ export default async function StudentProfilePage() {
         </PanelHeader>
         <AvatarForm
           currentAvatarUrl={user.image}
-          name={user.name}
+          name={toDisplayText(user.name)}
           currentZoomPct={user.avatarZoomPct}
           currentPositionX={user.avatarPositionX}
           currentPositionY={user.avatarPositionY}
@@ -43,7 +44,7 @@ export default async function StudentProfilePage() {
         <dl className="space-y-3 text-sm">
           <div>
             <dt className="text-xs text-[var(--muted)]">Nome</dt>
-            <dd className="mt-0.5">{user.name}</dd>
+            <dd className="mt-0.5">{toDisplayText(user.name)}</dd>
           </div>
           <div>
             <dt className="text-xs text-[var(--muted)]">E-mail</dt>

@@ -1,3 +1,4 @@
+import { toDisplayText } from "@/lib/text-case";
 import { auth } from "@/lib/auth";
 import { listEducationalContent } from "@/lib/actions/communication";
 import { Panel } from "@/components/ui/panel";
@@ -23,7 +24,7 @@ export default async function StudentChatPage() {
           <div className="mt-3 flex flex-col gap-3">
             {content.map((c) => (
               <Panel key={c.id}>
-                <p className="font-medium">{c.title}</p>
+                <p className="font-medium">{toDisplayText(c.title)}</p>
                 {c.body && <p className="mt-1 text-sm text-[var(--muted)]">{c.body}</p>}
                 {c.mediaUrl && (
                   <a href={c.mediaUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-[var(--primary)]">

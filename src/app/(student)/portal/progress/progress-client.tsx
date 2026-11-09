@@ -1,4 +1,5 @@
 "use client";
+import { toDisplayText } from "@/lib/text-case";
 import { formatDateOnly } from "@/lib/dates";
 
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
@@ -52,7 +53,7 @@ export function StudentProgressClient({ assessments }: { assessments: Assessment
                                     {a.bodyFatPct ? ` · ${a.bodyFatPct}% gordura` : ""}
                                     {a.waistCm ? ` · cintura ${a.waistCm}cm` : ""}
                                 </p>
-                                {a.notes && <p className="mt-1 text-xs text-[var(--muted)]">{a.notes}</p>}
+                                {a.notes && <p className="mt-1 text-xs text-[var(--muted)]">{toDisplayText(a.notes)}</p>}
                                 {a.photos && a.photos.length > 0 && (
                                     <div className="mt-2 flex gap-2">
                                         {a.photos.map((p) => (

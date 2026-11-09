@@ -95,7 +95,7 @@ export function StudentsExplorer({
           <Panel className="hidden overflow-x-auto p-0 sm:block">
             <table className="w-full min-w-xl text-sm">
               <thead>
-                <tr className="tf-hairline text-left text-xs uppercase tracking-wide text-[var(--muted)]">
+                <tr className="tf-hairline text-left text-xs tracking-wide text-[var(--muted)]">
                   <th className="px-5 py-3 font-normal">Nome</th>
                   <th className="px-5 py-3 font-normal">E-mail</th>
                   <th className="px-5 py-3 font-normal">Objetivos</th>

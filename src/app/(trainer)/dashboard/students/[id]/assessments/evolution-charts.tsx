@@ -39,7 +39,7 @@ function ChartBlock({
 }: { title: string; dataKey: string; data: Record<string, unknown>[]; color: string }) {
   return (
     <div>
-      <p className="mb-2 text-xs uppercase tracking-wide text-[var(--muted)]">{title}</p>
+      <p className="mb-2 text-xs tracking-wide text-[var(--muted)]">{title}</p>
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>

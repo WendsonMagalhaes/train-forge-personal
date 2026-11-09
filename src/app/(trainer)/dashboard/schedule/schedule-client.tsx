@@ -62,7 +62,7 @@ export function ScheduleClient({ sessions, studentOptions }: { sessions: Session
         <div className="flex flex-col gap-6">
           {groups.map(([day, items]) => (
             <div key={day}>
-              <p className="mb-2 text-xs uppercase tracking-wide text-[var(--muted)]">{day}</p>
+              <p className="mb-2 text-xs tracking-wide text-[var(--muted)]">{day}</p>
               <div className="flex flex-col gap-2">
                 {items.map((s) => <SessionRowCard key={s.id} session={s} onChange={refresh} />)}
               </div>

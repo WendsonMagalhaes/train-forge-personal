@@ -1,4 +1,5 @@
 "use client";
+import { toDisplayText } from "@/lib/text-case";
 import { formatDateOnly } from "@/lib/dates";
 
 import { Panel, PanelTitle } from "@/components/ui/panel";
@@ -67,7 +68,7 @@ export function StudentPortalFinanceClient({ subscription, history }: { subscrip
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-xs text-[var(--muted)]">Seu plano</p>
-              <p className="truncate font-medium">{subscription.planName}</p>
+              <p className="truncate font-medium">{toDisplayText(subscription.planName)}</p>
             </div>
             <Badge variant={SUB_STATUS_VARIANT[subscription.status] ?? "outline"}>
               {SUB_STATUS_LABEL[subscription.status] ?? subscription.status}
@@ -102,7 +103,7 @@ export function StudentPortalFinanceClient({ subscription, history }: { subscrip
                   <Badge variant={STATUS_VARIANT[p.status] ?? "outline"}>{PAYMENT_STATUS_LABEL[p.status] ?? p.status}</Badge>
                 </div>
                 <p className="mt-0.5 text-xs text-[var(--muted)]">
-                  {p.planName} · vencimento {formatDate(p.dueDate)}
+                  {toDisplayText(p.planName)} · vencimento {formatDate(p.dueDate)}
                   {p.paidAt && ` · pago em ${formatDate(p.paidAt)}`}
                 </p>
                 {p.method && <p className="mt-0.5 text-xs text-[var(--muted)]">{PAYMENT_METHOD_LABEL[p.method]}</p>}

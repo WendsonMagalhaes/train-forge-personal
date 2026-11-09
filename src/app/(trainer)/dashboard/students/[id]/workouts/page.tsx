@@ -1,4 +1,5 @@
 import { listCycles, listPlansWithExercises } from "@/lib/actions/workouts";
+import { listWorkoutTemplates } from "@/lib/actions/workout-templates";
 import { listExercises } from "@/lib/actions/exercises";
 import { WorkoutsClient } from "./workouts-client";
 
@@ -10,6 +11,14 @@ export default async function StudentWorkoutsPage({ params }: { params: Promise<
     cycles.map(async (cycle) => ({ ...cycle, plans: await listPlansWithExercises(cycle.id) }))
   );
   const exerciseLibrary = await listExercises();
+  const templates = await listWorkoutTemplates();
 
-  return <WorkoutsClient studentId={id} cycles={cyclesWithPlans} exerciseLibrary={exerciseLibrary} />;
+  return (
+    <WorkoutsClient
+      studentId={id}
+      cycles={cyclesWithPlans}
+      exerciseLibrary={exerciseLibrary}
+      templates={templates}
+    />
+  );
 }

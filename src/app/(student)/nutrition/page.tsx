@@ -1,3 +1,4 @@
+import { toDisplayText } from "@/lib/text-case";
 import { getMyActiveNutritionPlan, listMyNutritionLogs } from "@/lib/actions/nutrition";
 import { NutritionLogForm } from "./nutrition-log-form";
 import { Panel } from "@/components/ui/panel";
@@ -14,7 +15,7 @@ export default async function StudentNutritionPortalPage() {
         <h1 className="text-lg font-semibold mb-4">Meu plano nutricional</h1>
         {plan ? (
           <div className="space-y-3">
-            <p className="font-medium">{plan.title}</p>
+            <p className="font-medium">{toDisplayText(plan.title)}</p>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <Metric label="Calorias" value={plan.targetCalories} suffix="kcal" />
               <Metric label="Proteína" value={plan.targetProteinG} suffix="g" />
@@ -55,7 +56,7 @@ export default async function StudentNutritionPortalPage() {
                     {new Date(log.loggedAt).toLocaleString("pt-BR")}
                   </span>
                 </div>
-                <p className="text-muted-foreground mt-1">{log.description}</p>
+                <p className="text-muted-foreground mt-1">{toDisplayText(log.description)}</p>
               </li>
             ))}
           </ul>

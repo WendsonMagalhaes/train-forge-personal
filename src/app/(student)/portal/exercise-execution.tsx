@@ -238,7 +238,7 @@ function RestTimer({ seconds, onDone, onSkip }: { seconds: number; onDone: () =>
 
   return (
     <div className="flex flex-col items-center gap-3 rounded-[var(--radius)] bg-[var(--background)] py-8">
-      <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Descanso</p>
+      <p className="text-xs tracking-wide text-[var(--muted)]">Descanso</p>
       <p className="font-display text-6xl tabular-nums">{remaining}s</p>
       <div className="h-1.5 w-40 overflow-hidden rounded-full bg-[var(--border)]">
         <div className="h-full bg-[var(--primary)] transition-all duration-1000 ease-linear" style={{ width: `${pct}%` }} />
