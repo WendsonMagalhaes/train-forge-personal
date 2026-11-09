@@ -10,6 +10,8 @@ import { eq, and, desc, asc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { SERIES_TYPES, SERIES_TYPE_EXERCISE_COUNT, type SeriesType } from "@/lib/constants";
+import { toDbText, toDbTextOrNull } from "@/lib/text-case";
+import { optionalDecimal, optionalInt, requiredInt } from "@/lib/validations/numeric";
 
 async function requireTrainerForStudent(studentId: string) {
   const session = await auth();
@@ -59,8 +61,8 @@ export async function createCycle(studentId: string, formData: FormData) {
 
   await db.insert(workoutCycles).values({
     studentId,
-    name: parsed.data.name,
-    goal: parsed.data.goal,
+    name: toDbText(parsed.data.name),
+    goal: toDbTextOrNull(parsed.data.goal),
     startDate: parsed.data.startDate,
     endDate: parsed.data.endDate || null,
     isActive: true,
@@ -151,7 +153,7 @@ export async function createPlan(studentId: string, cycleId: string, formData: F
 
   await db.insert(workoutPlans).values({
     cycleId,
-    label: parsed.data.label,
+    label: toDbText(parsed.data.label),
     weekdays: parsed.data.weekdays.join(","),
   });
 
@@ -167,90 +169,155 @@ export async function deletePlan(studentId: string, planId: string) {
 
 // ---------- Blocos (série simples / bi-set / tri-set / etc) dentro de uma ficha ----------
 
+// Números chegam do formulário como texto e são convertidos aqui, antes de gravar.
+
 const setDetailRowSchema = z.object({
   setNumber: z.number().int().min(1),
   label: z.string().optional(),
   reps: z.string().optional(),
-  loadKg: z.number().optional(),
-  restSeconds: z.number().int().optional(),
-  holdSeconds: z.number().int().optional(),
+  loadKg: optionalDecimal,
+  restSeconds: optionalInt,
+  holdSeconds: optionalInt,
 });
 
 const blockExerciseInputSchema = z.object({
   exerciseId: z.string().min(1, "Selecione um exercício"),
   reps: z.string().optional(),
-  loadKg: z.number().optional(),
+  loadKg: optionalDecimal,
   tempo: z.string().optional(),
-  holdSeconds: z.number().int().optional(),
+  holdSeconds: optionalInt,
   notes: z.string().optional(),
   setsDetail: z.array(setDetailRowSchema).optional(),
 });
 
 const createBlockSchema = z.object({
   seriesType: z.enum(SERIES_TYPES as unknown as [SeriesType, ...SeriesType[]]),
-  rounds: z.number().int().min(1),
-  restSeconds: z.number().int().optional(),
+  rounds: requiredInt("Informe um número válido de séries."),
+  restSeconds: optionalInt,
   notes: z.string().optional(),
-  exercises: z.array(blockExerciseInputSchema).min(1),
+  exercises: z.array(blockExerciseInputSchema).min(1, "Adicione pelo menos um exercício."),
 });
 
-export type CreateBlockInput = z.infer<typeof createBlockSchema>;
+/** Entrada vinda do formulário: números ainda como texto. */
+export type CreateBlockInput = z.input<typeof createBlockSchema>;
 
 /**
- * Cria um bloco completo (série simples, bi-set, tri-set, circuito, pirâmide,
- * drop-set, etc) com todos os exercícios que ele contém numa única chamada —
- * mais simples do que compor várias server actions encadeadas do client.
+ * Adiciona vários blocos à ficha numa só chamada. Valida todos antes de gravar,
+ * então um erro em qualquer item não deixa blocos pela metade.
  */
-export async function createBlockWithExercises(studentId: string, planId: string, input: CreateBlockInput) {
+export async function createBlocksWithExercises(studentId: string, planId: string, inputs: CreateBlockInput[]) {
   await requireTrainerForStudent(studentId);
 
-  const parsed = createBlockSchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-
-  const { min, max } = SERIES_TYPE_EXERCISE_COUNT[parsed.data.seriesType];
-  if (parsed.data.exercises.length < min || parsed.data.exercises.length > max) {
-    return { error: `Esse tipo de série exige entre ${min} e ${max} exercício(s).` };
+  const blocks: z.output<typeof createBlockSchema>[] = [];
+  for (const input of inputs) {
+    const parsed = createBlockSchema.safeParse(input);
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
+    const { min, max } = SERIES_TYPE_EXERCISE_COUNT[parsed.data.seriesType];
+    if (parsed.data.exercises.length < min || parsed.data.exercises.length > max) {
+      return { error: `Esse tipo de série exige entre ${min} e ${max} exercício(s).` };
+    }
+    blocks.push(parsed.data);
   }
 
   const existingCount = await db.select().from(workoutBlocks).where(eq(workoutBlocks.planId, planId));
+  let orderIndex = existingCount.length;
 
-  const [block] = await db
-    .insert(workoutBlocks)
-    .values({
-      planId,
-      orderIndex: existingCount.length,
-      seriesType: parsed.data.seriesType,
-      rounds: parsed.data.rounds,
-      restSeconds: parsed.data.restSeconds,
-      notes: parsed.data.notes,
-    })
-    .returning();
+  for (const data of blocks) {
+    const [block] = await db
+      .insert(workoutBlocks)
+      .values({
+        planId,
+        orderIndex: orderIndex++,
+        seriesType: data.seriesType,
+        rounds: data.rounds,
+        restSeconds: data.restSeconds,
+        notes: toDbTextOrNull(data.notes),
+      })
+      .returning();
 
-  await db.insert(workoutBlockExercises).values(
-    parsed.data.exercises.map((ex, i) => ({
-      blockId: block.id,
-      exerciseId: ex.exerciseId,
-      orderIndex: i,
-      reps: ex.reps,
-      loadKg: ex.loadKg != null ? String(ex.loadKg) : undefined,
-      tempo: ex.tempo,
-      holdSeconds: ex.holdSeconds,
-      notes: ex.notes,
-      setsDetail: ex.setsDetail && ex.setsDetail.length > 0 ? ex.setsDetail : undefined,
-    }))
-  );
+    await db.insert(workoutBlockExercises).values(
+      data.exercises.map((ex, i) => ({
+        blockId: block.id,
+        exerciseId: ex.exerciseId,
+        orderIndex: i,
+        reps: ex.reps,
+        loadKg: ex.loadKg != null ? String(ex.loadKg) : undefined,
+        tempo: ex.tempo,
+        holdSeconds: ex.holdSeconds,
+        notes: toDbTextOrNull(ex.notes),
+        setsDetail: ex.setsDetail && ex.setsDetail.length > 0
+          ? ex.setsDetail.map((row) => ({ ...row, label: toDbTextOrNull(row.label) ?? undefined }))
+          : undefined,
+      }))
+    );
+  }
 
   revalidatePath(`/dashboard/students/${studentId}/workouts`);
-  return { success: true, blockId: block.id };
+  return { success: true };
 }
 
-export async function updateBlock(
+/** Bloco único (tipos avançados). Mantido como atalho de createBlocksWithExercises. */
+export async function createBlockWithExercises(studentId: string, planId: string, input: CreateBlockInput) {
+  return createBlocksWithExercises(studentId, planId, [input]);
+}
+
+const updateBlockSchema = z.object({
+  rounds: requiredInt("Informe um número válido de séries."),
+  restSeconds: optionalInt,
+  notes: z.string().optional(),
+});
+
+export async function updateBlock(studentId: string, blockId: string, input: z.input<typeof updateBlockSchema>) {
+  await requireTrainerForStudent(studentId);
+
+  const parsed = updateBlockSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  await db
+    .update(workoutBlocks)
+    .set({
+      rounds: parsed.data.rounds,
+      restSeconds: parsed.data.restSeconds ?? null,
+      notes: toDbTextOrNull(parsed.data.notes),
+    })
+    .where(eq(workoutBlocks.id, blockId));
+
+  revalidatePath(`/dashboard/students/${studentId}/workouts`);
+  return { success: true };
+}
+
+const updateBlockExerciseSchema = z.object({
+  exerciseId: z.string().min(1, "Selecione um exercício"),
+  reps: z.string().optional(),
+  loadKg: optionalDecimal,
+  tempo: z.string().optional(),
+  holdSeconds: optionalInt,
+  notes: z.string().optional(),
+});
+
+/** Edita um exercício dentro de um bloco: troca o exercício e todos os campos dele. */
+export async function updateBlockExercise(
   studentId: string,
-  blockId: string,
-  data: { rounds?: number; restSeconds?: number; notes?: string }
+  blockExerciseId: string,
+  input: z.input<typeof updateBlockExerciseSchema>
 ) {
   await requireTrainerForStudent(studentId);
-  await db.update(workoutBlocks).set(data).where(eq(workoutBlocks.id, blockId));
+
+  const parsed = updateBlockExerciseSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  await db
+    .update(workoutBlockExercises)
+    .set({
+      exerciseId: parsed.data.exerciseId,
+      reps: parsed.data.reps || null,
+      loadKg: parsed.data.loadKg != null ? String(parsed.data.loadKg) : null,
+      tempo: parsed.data.tempo || null,
+      holdSeconds: parsed.data.holdSeconds ?? null,
+      notes: toDbTextOrNull(parsed.data.notes),
+    })
+    .where(eq(workoutBlockExercises.id, blockExerciseId));
+
   revalidatePath(`/dashboard/students/${studentId}/workouts`);
   return { success: true };
 }

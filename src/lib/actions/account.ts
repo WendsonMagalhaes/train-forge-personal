@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { auth, signOut } from "@/lib/auth";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 
@@ -41,7 +41,15 @@ export async function setNewPassword(formData: FormData) {
 
   await db
     .update(users)
-    .set({ passwordHash, mustChangePassword: false, updatedAt: new Date() })
+    .set({
+      passwordHash,
+      mustChangePassword: false,
+      // a senha provisória não deve mais existir depois da troca
+      provisionalPasswordEnc: null,
+      // registra a data do primeiro acesso (só na primeira troca forçada)
+      firstAccessAt: sql`CASE WHEN ${users.mustChangePassword} THEN coalesce(${users.firstAccessAt}, now()) ELSE ${users.firstAccessAt} END`,
+      updatedAt: new Date(),
+    })
     .where(eq(users.id, session.user.id));
 
   // Desloga e manda pro login de novo — mais simples e seguro do que tentar

@@ -1,5 +1,6 @@
 "use client";
 
+import { toDisplayText } from "@/lib/text-case";
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { WEEKDAY_OPTIONS, MUSCLE_GROUP_LABEL } from "@/lib/constants";
@@ -57,7 +58,7 @@ export function WorkoutSummarySidebar({ cycles }: { cycles: Cycle[] }) {
         </PanelHeader>
         {next ? (
           <>
-            <p className="font-display text-xl">{next.plan.label}</p>
+            <p className="font-display text-xl">{toDisplayText(next.plan.label)}</p>
             <p className="mt-1 text-sm text-[var(--muted)]">
               {next.isToday ? "Hoje" : next.weekdayLabel} · {next.plan.blocks.reduce((s, b) => s + b.exercises.length, 0)} exercício(s)
             </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { toDisplayText } from "@/lib/text-case";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Autocomplete, type AutocompleteOption } from "@/components/ui/autocomplete";
@@ -43,7 +44,7 @@ export function StudentsExplorer({
   }, [rows, normalizedQuery]);
 
   const options: AutocompleteOption[] = React.useMemo(
-    () => filtered.slice(0, 8).map((s) => ({ id: s.id, label: s.name, sublabel: s.email })),
+    () => filtered.slice(0, 8).map((s) => ({ id: s.id, label: toDisplayText(s.name), sublabel: s.email })),
     [filtered]
   );
 
@@ -76,7 +77,7 @@ export function StudentsExplorer({
               <StudentRowLink key={s.id} id={s.id}>
                 <Panel className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{s.name}</p>
+                    <p className="truncate font-medium">{toDisplayText(s.name)}</p>
                     <p className="truncate text-xs text-[var(--muted)]">{s.email}</p>
                     {s.goals && s.goals.length > 0 && (
                       <p className="mt-1 truncate text-xs text-[var(--muted)]">
@@ -104,7 +105,7 @@ export function StudentsExplorer({
               <tbody>
                 {filtered.map((s) => (
                   <StudentRowLink key={s.id} id={s.id} asRow>
-                    <td className="px-5 py-3">{s.name}</td>
+                    <td className="px-5 py-3">{toDisplayText(s.name)}</td>
                     <td className="px-5 py-3 text-[var(--muted)]">{s.email}</td>
                     <td className="px-5 py-3 text-[var(--muted)]">
                       {s.goals && s.goals.length > 0 ? s.goals.map((g) => goalLabel[g] ?? g).join(", ") : "—"}

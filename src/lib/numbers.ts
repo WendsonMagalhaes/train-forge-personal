@@ -38,3 +38,8 @@ export function parseDecimalBR(value: unknown): number | null {
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
+
+/** Sanitiza campo inteiro digitado: mantém somente dígitos. */
+export function sanitizeIntInput(raw: string): string {
+  return raw.replace(/\D/g, "");
+}

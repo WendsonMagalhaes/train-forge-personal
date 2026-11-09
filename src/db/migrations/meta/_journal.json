@@ -29,6 +29,13 @@
       "when": 1792930529318,
       "tag": "0003_finance_lock",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794225600000,
+      "tag": "0004_first_access",
+      "breakpoints": true
     }
   ]
 }

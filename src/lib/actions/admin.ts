@@ -15,6 +15,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { MUSCLE_GROUPS, type MuscleGroup } from "@/lib/constants";
+import { encryptProvisionalPassword } from "@/lib/crypto/provisional-password";
 
 async function requireAdmin() {
   const session = await auth();
@@ -97,6 +98,7 @@ export async function createUser(formData: FormData) {
       role,
       trainerId: role === "student" ? trainerId : null,
       mustChangePassword: true,
+      provisionalPasswordEnc: encryptProvisionalPassword(tempPassword),
     })
     .returning();
 
@@ -167,7 +169,7 @@ export async function resetUserPassword(userId: string) {
 
   await db
     .update(users)
-    .set({ passwordHash, mustChangePassword: true, updatedAt: new Date() })
+    .set({ passwordHash, mustChangePassword: true, provisionalPasswordEnc: encryptProvisionalPassword(tempPassword), updatedAt: new Date() })
     .where(eq(users.id, userId));
 
   revalidatePath("/admin/users");

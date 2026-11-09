@@ -2,13 +2,14 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 import { Logo } from "@/components/layout/logo";
+import { InstallGuide } from "@/components/pwa/install-guide";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string; passwordChanged?: string }>;
+  searchParams: Promise<{ callbackUrl?: string; passwordChanged?: string; email?: string }>;
 }) {
-  const { callbackUrl, passwordChanged } = await searchParams;
+  const { callbackUrl, passwordChanged, email } = await searchParams;
 
   // Sessão já válida (ex.: abriu o PWA instalado, que sempre começa em /login)
   // — manda direto pra área do papel em vez de mostrar o formulário de novo.
@@ -31,7 +32,10 @@ export default async function LoginPage({
             Senha alterada com sucesso. Entre com a nova senha.
           </p>
         )}
-        <LoginForm callbackUrl={callbackUrl} />
+        <LoginForm callbackUrl={callbackUrl} defaultEmail={email} />
+        <div className="mt-6">
+          <InstallGuide />
+        </div>
       </div>
     </main>
   );

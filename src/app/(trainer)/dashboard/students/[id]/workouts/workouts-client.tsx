@@ -1,13 +1,14 @@
 "use client";
-import { parseDecimalBR } from "@/lib/numbers";
+import { sanitizeDecimalInput, sanitizeIntInput } from "@/lib/numbers";
+import { toDisplayText } from "@/lib/text-case";
 import { NumberInput } from "@/components/ui/number-input";
 
-import { useState, useTransition, useActionState, useEffect, useMemo } from "react";
+import { useState, useTransition, useActionState, useEffect, useMemo, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   createCycle, deleteCycle, setActiveCycle,
   createPlan, deletePlan,
-  createBlockWithExercises, updateBlock, deleteBlock, removeBlockExercise,
+  createBlockWithExercises, createBlocksWithExercises, updateBlock, updateBlockExercise, deleteBlock, removeBlockExercise,
   type CreateBlockInput,
 } from "@/lib/actions/workouts";
 import { Dialog } from "@/components/ui/dialog";
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Panel, PanelHeader, PanelTitle } from "@/components/ui/panel";
+import { Collapsible } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { ChipMultiSelect } from "@/components/ui/chip-select";
 import { Autocomplete, type AutocompleteOption } from "@/components/ui/autocomplete";
@@ -175,7 +177,7 @@ function CycleCard({
     <Panel>
       <PanelHeader>
         <div className="flex items-center gap-2">
-          <PanelTitle>{cycle.name}</PanelTitle>
+          <PanelTitle>{toDisplayText(cycle.name)}</PanelTitle>
           {cycle.isActive && <Badge variant="success">Ativo</Badge>}
         </div>
         <div className="flex items-center gap-2">
@@ -200,7 +202,7 @@ function CycleCard({
       </PanelHeader>
 
       <p className="mb-4 text-xs text-[var(--muted)]">
-        {cycle.goal ? `${cycle.goal} · ` : ""}
+        {cycle.goal ? `${toDisplayText(cycle.goal)} · ` : ""}
         {cycle.startDate}{cycle.endDate ? ` – ${cycle.endDate}` : ""}
       </p>
 
@@ -372,25 +374,29 @@ function PlanCard({
   studentId, plan, exerciseLibrary, onChange,
 }: { studentId: string; plan: Plan; exerciseLibrary: ExerciseLib[]; onChange: () => void }) {
   const days = (plan.weekdays || "").split(",").filter(Boolean);
-  const { toast } = useToast();
 
   return (
     <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] p-4">
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <div>
-          <p className="font-medium">{plan.label}</p>
-          {days.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {days.map((d) => <Badge key={d} variant="outline">{WEEKDAY_LABEL[d] ?? d}</Badge>)}
-            </div>
-          )}
-        </div>
-        <ConfirmDeleteButton
-          itemLabel={plan.label}
-          trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>}
-          onConfirm={async () => { await deletePlan(studentId, plan.id); onChange(); }}
-        />
-      </div>
+      <Collapsible
+        title={
+          <>
+            <span className="font-medium">{toDisplayText(plan.label)}</span>
+            {days.length > 0 && (
+              <span className="flex flex-wrap gap-1">
+                {days.map((d) => <Badge key={d} variant="outline">{WEEKDAY_LABEL[d] ?? d}</Badge>)}
+              </span>
+            )}
+          </>
+        }
+        summary={plan.blocks.length > 0 ? `${plan.blocks.length} ${plan.blocks.length === 1 ? "bloco" : "blocos"}` : "vazia"}
+        actions={
+          <ConfirmDeleteButton
+            itemLabel={plan.label}
+            trigger={<button className="tf-tap flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-red-500" type="button" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>}
+            onConfirm={async () => { await deletePlan(studentId, plan.id); onChange(); }}
+          />
+        }
+      >
 
       {plan.blocks.length === 0 ? (
         <p className="mb-3 text-xs text-[var(--muted)]">Nenhum exercício adicionado.</p>
@@ -403,6 +409,7 @@ function PlanCard({
               block={block}
               index={i}
               onChange={onChange}
+              exerciseLibrary={exerciseLibrary}
             />
           ))}
         </div>
@@ -413,15 +420,16 @@ function PlanCard({
           Cadastre exercícios na <a href="/dashboard/exercises" className="text-[var(--primary)]">biblioteca</a> para adicioná-los aqui.
         </p>
       ) : (
-        <AddBlockButton studentId={studentId} planId={plan.id} exerciseLibrary={exerciseLibrary} onDone={() => { onChange(); toast({ variant: "success", description: "Bloco adicionado à ficha." }); }} />
+        <AddBlockButton studentId={studentId} planId={plan.id} exerciseLibrary={exerciseLibrary} onDone={onChange} />
       )}
+      </Collapsible>
     </div>
   );
 }
 
 function BlockRow({
-  studentId, block, index, onChange,
-}: { studentId: string; block: Block; index: number; onChange: () => void }) {
+  studentId, block, index, onChange, exerciseLibrary,
+}: { studentId: string; block: Block; index: number; onChange: () => void; exerciseLibrary: ExerciseLib[] }) {
   const { min } = SERIES_TYPE_EXERCISE_COUNT[block.seriesType];
   const isMulti = block.exercises.length > 1;
 
@@ -447,21 +455,23 @@ function BlockRow({
         </div>
       </div>
 
-      {block.notes && <p className="mb-2 text-xs text-[var(--muted)]">{block.notes}</p>}
+      {block.notes && <p className="mb-2 text-xs text-[var(--muted)]">{toDisplayText(block.notes)}</p>}
 
       <div className={isMulti ? "flex flex-col gap-2 border-l-2 border-[var(--border)] pl-3" : "flex flex-col gap-2"}>
         {block.exercises.map((ex) => (
           <div key={ex.id} className="flex items-center gap-2">
             <ExerciseThumb item={{ imageUrl: ex.imageUrl, name: ex.exerciseName }} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm">{ex.exerciseName}</p>
+              <p className="truncate text-sm">{toDisplayText(ex.exerciseName)}</p>
               <p className="truncate text-xs text-[var(--muted)]">
                 {ex.holdSeconds ? `${ex.holdSeconds}s` : ex.reps || "—"}
+                {ex.notes ? ` ${toDisplayText(ex.notes)}` : ""}
                 {ex.loadKg ? ` · ${ex.loadKg}kg` : ""}
                 {ex.tempo ? ` · tempo ${ex.tempo}` : ""}
                 {ex.setsDetail && ex.setsDetail.length > 0 ? ` · ${ex.setsDetail.length} séries detalhadas` : ""}
               </p>
             </div>
+            <EditExerciseButton studentId={studentId} block={block} item={ex} exerciseLibrary={exerciseLibrary} onChange={onChange} />
             {/* Sempre visível. Quando o bloco já está no mínimo de exercícios (ex.: série simples),
                 excluir o exercício significaria esvaziar o bloco — então o botão exclui o bloco inteiro, com confirmação. */}
             {block.exercises.length > min ? (
@@ -511,17 +521,10 @@ function EditBlockButton({
 
   function save() {
     startTransition(async () => {
-      const res = await updateBlock(studentId, block.id, {
-        rounds: Number(rounds) || 1,
-        restSeconds: restSeconds ? Number(restSeconds) : undefined,
-        notes: notes || undefined,
-      });
+      const res = await updateBlock(studentId, block.id, { rounds, restSeconds, notes });
 
-      if (!res.success) {
-        toast({
-          variant: "error",
-          description: "Não foi possível atualizar o bloco.",
-        });
+      if ("error" in res) {
+        toast({ variant: "error", description: res.error ?? "Não foi possível atualizar o bloco." });
       } else {
         toast({
           variant: "success",
@@ -545,11 +548,11 @@ function EditBlockButton({
         <div className="flex flex-col gap-4">
           <div>
             <Label htmlFor="edit-rounds">Séries</Label>
-            <Input id="edit-rounds" type="number" min={1} value={rounds} onChange={(e) => setRounds(e.target.value)} />
+            <Input id="edit-rounds" inputMode="numeric" value={rounds} onChange={(e) => setRounds(sanitizeIntInput(e.target.value))} />
           </div>
           <div>
             <Label htmlFor="edit-rest">Descanso entre séries (segundos)</Label>
-            <Input id="edit-rest" type="number" min={0} value={restSeconds} onChange={(e) => setRestSeconds(e.target.value)} placeholder="Opcional" />
+            <Input id="edit-rest" inputMode="numeric" value={restSeconds} onChange={(e) => setRestSeconds(sanitizeIntInput(e.target.value))} placeholder="Opcional" />
           </div>
           <div>
             <Label htmlFor="edit-notes">Observações</Label>
@@ -562,28 +565,306 @@ function EditBlockButton({
   );
 }
 
+// Tipos de uma série só (um exercício por bloco): entram nos cards do "Adicionar exercício".
+const CARD_SERIES_OPTIONS = SERIES_TYPE_OPTIONS.filter(
+  (o) => SERIES_TYPE_EXERCISE_COUNT[o.value].max === 1 && !SERIES_TYPES_WITH_SET_DETAIL.includes(o.value)
+);
+// Tipos com vários exercícios ou séries detalhadas: ficam no "Bloco avançado".
+const COMBINED_SERIES_OPTIONS = SERIES_TYPE_OPTIONS.filter(
+  (o) => SERIES_TYPE_EXERCISE_COUNT[o.value].max > 1 || SERIES_TYPES_WITH_SET_DETAIL.includes(o.value)
+);
+
+const SELECT_CLASS = "h-9 w-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none focus-visible:border-[var(--tf-ember)]";
+
 function AddBlockButton({
   studentId, planId, exerciseLibrary, onDone,
 }: { studentId: string; planId: string; exerciseLibrary: ExerciseLib[]; onDone: () => void }) {
+  const [openSimple, setOpenSimple] = useState(false);
+  const [openAdvanced, setOpenAdvanced] = useState(false);
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Dialog
+        size="lg"
+        title="Adicionar exercício à ficha"
+        description="Cada exercício tem o próprio tipo, séries e descanso. Adicione quantos quiser de uma vez."
+        trigger={<Button size="sm"><Plus className="h-3.5 w-3.5" />Adicionar exercício</Button>}
+        open={openSimple}
+        onOpenChange={setOpenSimple}
+      >
+        {() => (
+          <AddExercisesForm
+            studentId={studentId}
+            planId={planId}
+            exerciseLibrary={exerciseLibrary}
+            onSuccess={() => { setOpenSimple(false); onDone(); }}
+          />
+        )}
+      </Dialog>
+
+      <Dialog
+        size="lg"
+        title="Adicionar bloco avançado"
+        description="Bi-set, tri-set, circuito, pirâmide, drop-set e outros tipos com vários exercícios ou séries detalhadas."
+        trigger={<Button size="sm" variant="secondary">Bloco avançado</Button>}
+        open={openAdvanced}
+        onOpenChange={setOpenAdvanced}
+      >
+        {() => (
+          <AddBlockForm
+            studentId={studentId}
+            planId={planId}
+            exerciseLibrary={exerciseLibrary}
+            onSuccess={() => { setOpenAdvanced(false); onDone(); }}
+          />
+        )}
+      </Dialog>
+    </div>
+  );
+}
+
+type CardState = SlotState & { seriesType: SeriesType; rounds: string; restSeconds: string };
+
+function emptyCard(): CardState {
+  return { ...emptySlot(), seriesType: "simples", rounds: "3", restSeconds: "60" };
+}
+
+function AddExercisesForm({
+  studentId, planId, exerciseLibrary, onSuccess,
+}: { studentId: string; planId: string; exerciseLibrary: ExerciseLib[]; onSuccess: () => void }) {
+  const { toast } = useToast();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [cards, setCards] = useState<CardState[]>([emptyCard()]);
+
+  function updateCard(key: string, patch: Partial<CardState>) {
+    setCards((prev) => prev.map((c) => (c.key === key ? { ...c, ...patch } : c)));
+  }
+
+  function removeCard(key: string) {
+    setCards((prev) => (prev.length > 1 ? prev.filter((c) => c.key !== key) : prev));
+  }
+
+  function submit() {
+    setError(null);
+
+    if (cards.some((c) => !c.exerciseId)) {
+      setError("Selecione um exercício em cada campo.");
+      return;
+    }
+
+    // Cada card vira um bloco com as próprias séries, descanso e tipo.
+    const inputs: CreateBlockInput[] = cards.map((c) => {
+      const timed = SERIES_TYPES_TIME_BASED.includes(c.seriesType);
+      return {
+        seriesType: c.seriesType,
+        rounds: c.rounds,
+        restSeconds: c.restSeconds || undefined,
+        exercises: [{
+          exerciseId: c.exerciseId,
+          reps: timed ? undefined : c.reps || undefined,
+          loadKg: c.loadKg || undefined,
+          tempo: c.tempo || undefined,
+          holdSeconds: timed && c.holdSeconds ? c.holdSeconds : undefined,
+          notes: c.notes || undefined,
+        }],
+      };
+    });
+
+    const count = cards.length;
+    startTransition(async () => {
+      const res = await createBlocksWithExercises(studentId, planId, inputs);
+      if (res?.error) {
+        setError(res.error);
+      } else {
+        toast({ variant: "success", description: count > 1 ? `${count} exercícios adicionados.` : "Exercício adicionado." });
+        onSuccess();
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {cards.map((card, i) => (
+        <ExerciseCard
+          key={card.key}
+          index={i}
+          card={card}
+          exerciseLibrary={exerciseLibrary}
+          onChange={(patch) => updateCard(card.key, patch)}
+          onRemove={cards.length > 1 ? () => removeCard(card.key) : undefined}
+        />
+      ))}
+
+      <Button type="button" variant="secondary" onClick={() => setCards((prev) => [...prev, emptyCard()])} className="w-full">
+        <Plus className="h-4 w-4" /> Adicionar outro exercício
+      </Button>
+
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      <div className="flex justify-end pt-1">
+        <Button type="button" onClick={submit} disabled={pending} className="w-full sm:w-auto">
+          {pending ? "Adicionando…" : cards.length > 1 ? `Adicionar ${cards.length} exercícios` : "Adicionar exercício"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ExerciseCard({
+  index, card, exerciseLibrary, onChange, onRemove,
+}: {
+  index: number;
+  card: CardState;
+  exerciseLibrary: ExerciseLib[];
+  onChange: (patch: Partial<CardState>) => void;
+  onRemove?: () => void;
+}) {
+  return (
+    <ExerciseSlotField
+      index={index}
+      slot={card}
+      isTimeBased={SERIES_TYPES_TIME_BASED.includes(card.seriesType)}
+      showBaseFields
+      exerciseLibrary={exerciseLibrary}
+      onChange={onChange}
+      onRemove={onRemove}
+      extra={
+        <div className="mb-3 flex flex-col gap-3">
+          <div>
+            <Label className="text-xs">Tipo de série</Label>
+            <select
+              value={card.seriesType}
+              onChange={(e) => onChange({ seriesType: e.target.value as SeriesType })}
+              className={SELECT_CLASS}
+            >
+              {CARD_SERIES_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Séries</Label>
+              <Input inputMode="numeric" value={card.rounds} onChange={(e) => onChange({ rounds: sanitizeIntInput(e.target.value) })} className="h-9" />
+            </div>
+            <div>
+              <Label className="text-xs">Descanso (s)</Label>
+              <Input inputMode="numeric" value={card.restSeconds} onChange={(e) => onChange({ restSeconds: sanitizeIntInput(e.target.value) })} className="h-9" />
+            </div>
+          </div>
+        </div>
+      }
+    />
+  );
+}
+
+function EditExerciseButton({
+  studentId, block, item, exerciseLibrary, onChange,
+}: {
+  studentId: string;
+  block: Block;
+  item: BlockItem;
+  exerciseLibrary: ExerciseLib[];
+  onChange: () => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <Dialog
-      size="lg"
-      title="Adicionar bloco à ficha"
-      description="Escolha o tipo de série e os exercícios que fazem parte dele."
-      trigger={<Button size="sm" variant="secondary"><Plus className="h-3.5 w-3.5" />Adicionar bloco</Button>}
+      title="Editar exercício"
+      description={`${SERIES_TYPE_LABEL[block.seriesType]} · ${block.rounds}x`}
+      trigger={
+        <button
+          type="button"
+          aria-label={`Editar ${item.exerciseName}`}
+          className="tf-tap flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--primary)]"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+      }
       open={open}
       onOpenChange={setOpen}
     >
       {() => (
-        <AddBlockForm
+        <EditExerciseForm
           studentId={studentId}
-          planId={planId}
+          block={block}
+          item={item}
           exerciseLibrary={exerciseLibrary}
-          onSuccess={() => { setOpen(false); onDone(); }}
+          onSuccess={() => { setOpen(false); onChange(); }}
         />
       )}
     </Dialog>
+  );
+}
+
+function EditExerciseForm({
+  studentId, block, item, exerciseLibrary, onSuccess,
+}: {
+  studentId: string;
+  block: Block;
+  item: BlockItem;
+  exerciseLibrary: ExerciseLib[];
+  onSuccess: () => void;
+}) {
+  const { toast } = useToast();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const isTimeBased = SERIES_TYPES_TIME_BASED.includes(block.seriesType);
+  const [slot, setSlot] = useState<SlotState>(() => ({
+    key: item.id,
+    exerciseId: item.exerciseId,
+    exerciseName: item.exerciseName,
+    imageUrl: item.imageUrl,
+    search: item.exerciseName,
+    reps: item.reps ?? "",
+    loadKg: item.loadKg ? String(Number(item.loadKg)).replace(".", ",") : "",
+    tempo: item.tempo ?? "",
+    holdSeconds: item.holdSeconds ? String(item.holdSeconds) : "",
+    notes: item.notes ?? "",
+  }));
+
+  function save() {
+    setError(null);
+    if (!slot.exerciseId) {
+      setError("Selecione um exercício.");
+      return;
+    }
+    startTransition(async () => {
+      const res = await updateBlockExercise(studentId, item.id, {
+        exerciseId: slot.exerciseId,
+        reps: isTimeBased ? undefined : slot.reps || undefined,
+        loadKg: slot.loadKg || undefined,
+        tempo: slot.tempo || undefined,
+        holdSeconds: isTimeBased && slot.holdSeconds ? slot.holdSeconds : undefined,
+        notes: slot.notes || undefined,
+      });
+      if ("error" in res) {
+        setError(res.error ?? "Não foi possível salvar o exercício.");
+      } else {
+        toast({ variant: "success", description: "Exercício atualizado." });
+        onSuccess();
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ExerciseSlotField
+        index={0}
+        slot={slot}
+        isTimeBased={isTimeBased}
+        showBaseFields
+        exerciseLibrary={exerciseLibrary}
+        onChange={(patch) => setSlot((prev) => ({ ...prev, ...patch }))}
+      />
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      <div className="flex justify-end">
+        <Button type="button" onClick={save} disabled={pending} className="w-full sm:w-auto">
+          {pending ? "Salvando…" : "Salvar exercício"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -615,11 +896,14 @@ function AddBlockForm({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const [seriesType, setSeriesType] = useState<SeriesType>("simples");
+  const [seriesType, setSeriesType] = useState<SeriesType>("biset");
   const { min, max } = SERIES_TYPE_EXERCISE_COUNT[seriesType];
   const hasSetDetail = SERIES_TYPES_WITH_SET_DETAIL.includes(seriesType);
   const isTimeBased = SERIES_TYPES_TIME_BASED.includes(seriesType);
-  const canAddRemoveSlots = max > min;
+  // Série simples aceita quantos exercícios forem preciso no mesmo envio (cada um vira um bloco).
+  const isSimple = seriesType === "simples";
+  const maxSlots = isSimple ? Infinity : max;
+  const canAddRemoveSlots = isSimple || max > min;
 
   const [rounds, setRounds] = useState("3");
   const [restSeconds, setRestSeconds] = useState("60");
@@ -632,7 +916,8 @@ function AddBlockForm({
 
   function changeSeriesType(next: SeriesType) {
     setSeriesType(next);
-    const { min: nextMin, max: nextMax } = SERIES_TYPE_EXERCISE_COUNT[next];
+    const { min: nextMin } = SERIES_TYPE_EXERCISE_COUNT[next];
+    const nextMax = next === "simples" ? Infinity : SERIES_TYPE_EXERCISE_COUNT[next].max;
     setSlots((prev) => {
       const clamped = [...prev];
       while (clamped.length < nextMin) clamped.push(emptySlot());
@@ -646,7 +931,7 @@ function AddBlockForm({
   }
 
   function addSlot() {
-    setSlots((prev) => (prev.length < max ? [...prev, emptySlot()] : prev));
+    setSlots((prev) => (prev.length < maxSlots ? [...prev, emptySlot()] : prev));
   }
 
   function removeSlot(key: string) {
@@ -673,44 +958,45 @@ function AddBlockForm({
       return;
     }
 
-    const parsedRounds = hasSetDetail ? setsRows.length : Number(rounds);
-    if (!parsedRounds || parsedRounds < 1) {
-      setError("Informe um número válido de séries.");
-      return;
-    }
-
+    // Números seguem como texto; a action valida e converte para número antes de gravar.
     const setsDetail = hasSetDetail
       ? setsRows.map((row) => ({
         setNumber: row.setNumber,
         label: row.label || undefined,
         reps: isTimeBased ? undefined : row.reps || undefined,
-        loadKg: parseDecimalBR(row.loadKg) ?? undefined,
-        holdSeconds: row.holdSeconds ? Number(row.holdSeconds) : undefined,
+        loadKg: row.loadKg || undefined,
+        holdSeconds: row.holdSeconds || undefined,
       }))
       : undefined;
 
     const payload: CreateBlockInput = {
       seriesType,
-      rounds: parsedRounds,
-      restSeconds: restSeconds ? Number(restSeconds) : undefined,
-      notes: blockNotes || undefined,
+      rounds: hasSetDetail ? String(setsRows.length) : rounds,
+      restSeconds: restSeconds || undefined,
+      notes: !isSimple && blockNotes ? blockNotes : undefined,
       exercises: slots.map((s, i) => ({
         exerciseId: s.exerciseId,
         reps: isTimeBased ? undefined : s.reps || undefined,
-        loadKg: parseDecimalBR(s.loadKg) ?? undefined,
+        loadKg: s.loadKg || undefined,
         tempo: s.tempo || undefined,
-        holdSeconds: isTimeBased && s.holdSeconds ? Number(s.holdSeconds) : undefined,
+        holdSeconds: isTimeBased && s.holdSeconds ? s.holdSeconds : undefined,
         notes: s.notes || undefined,
         setsDetail: i === 0 ? setsDetail : undefined,
       })),
     };
 
+    const count = slots.length;
     startTransition(async () => {
       const res = await createBlockWithExercises(studentId, planId, payload);
       if (res?.error) {
         setError(res.error);
       } else {
-        toast({ variant: "success", description: "Bloco adicionado." });
+        toast({
+          variant: "success",
+          description: isSimple
+            ? count > 1 ? `${count} exercícios adicionados.` : "Exercício adicionado."
+            : "Bloco adicionado.",
+        });
         onSuccess();
       }
     });
@@ -726,7 +1012,7 @@ function AddBlockForm({
           onChange={(e) => changeSeriesType(e.target.value as SeriesType)}
           className="h-10 w-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none focus-visible:border-[var(--tf-ember)]"
         >
-          {SERIES_TYPE_OPTIONS.map((o) => (
+          {COMBINED_SERIES_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
@@ -739,11 +1025,11 @@ function AddBlockForm({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="rounds">{max > 1 ? "Rodadas" : "Séries"}</Label>
-            <Input id="rounds" type="number" min={1} value={rounds} onChange={(e) => setRounds(e.target.value)} required />
+            <Input id="rounds" inputMode="numeric" value={rounds} onChange={(e) => setRounds(sanitizeIntInput(e.target.value))} required />
           </div>
           <div>
             <Label htmlFor="restSeconds">Descanso (s)</Label>
-            <Input id="restSeconds" type="number" min={0} value={restSeconds} onChange={(e) => setRestSeconds(e.target.value)} />
+            <Input id="restSeconds" inputMode="numeric" value={restSeconds} onChange={(e) => setRestSeconds(sanitizeIntInput(e.target.value))} />
           </div>
         </div>
       )}
@@ -769,9 +1055,9 @@ function AddBlockForm({
                 {isTimeBased ? (
                   <Input
                     placeholder="segundos"
-                    type="number"
+                    inputMode="numeric"
                     value={row.holdSeconds}
-                    onChange={(e) => updateSetRow(i, { holdSeconds: e.target.value })}
+                    onChange={(e) => updateSetRow(i, { holdSeconds: sanitizeIntInput(e.target.value) })}
                     className="h-8 w-24 text-xs"
                   />
                 ) : (
@@ -784,10 +1070,9 @@ function AddBlockForm({
                 )}
                 <Input
                   placeholder="kg"
-                  type="number"
-                  step="0.5"
+                  inputMode="decimal"
                   value={row.loadKg}
-                  onChange={(e) => updateSetRow(i, { loadKg: e.target.value })}
+                  onChange={(e) => updateSetRow(i, { loadKg: sanitizeDecimalInput(e.target.value) })}
                   className="h-8 w-20 text-xs"
                 />
                 {setsRows.length > 1 && (
@@ -801,23 +1086,25 @@ function AddBlockForm({
           <div className="mt-2 grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="restSeconds2">Descanso entre séries (s)</Label>
-              <Input id="restSeconds2" type="number" min={0} value={restSeconds} onChange={(e) => setRestSeconds(e.target.value)} />
+              <Input id="restSeconds2" inputMode="numeric" value={restSeconds} onChange={(e) => setRestSeconds(sanitizeIntInput(e.target.value))} />
             </div>
           </div>
         </div>
       )}
 
-      <div>
-        <Label htmlFor="blockNotes">Observações do bloco (opcional)</Label>
-        <Input id="blockNotes" value={blockNotes} onChange={(e) => setBlockNotes(e.target.value)} placeholder="Ex: priorizar amplitude total" />
-      </div>
+      {!isSimple && (
+        <div>
+          <Label htmlFor="blockNotes">Observações do bloco (opcional)</Label>
+          <Input id="blockNotes" value={blockNotes} onChange={(e) => setBlockNotes(e.target.value)} placeholder="Ex: priorizar amplitude total" />
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <Label>{max > 1 ? `Exercícios (${slots.length}${max !== min ? `/${max}` : ""})` : "Exercício"}</Label>
-          {canAddRemoveSlots && slots.length < max && (
+          <Label>{isSimple ? `Exercícios (${slots.length})` : max > 1 ? `Exercícios (${slots.length}${max !== min ? `/${max}` : ""})` : "Exercício"}</Label>
+          {canAddRemoveSlots && slots.length < maxSlots && (
             <Button type="button" size="sm" variant="secondary" onClick={addSlot}>
-              <Plus className="h-3.5 w-3.5" /> Exercício
+              <Plus className="h-3.5 w-3.5" /> {isSimple ? "Outro exercício" : "Exercício"}
             </Button>
           )}
         </div>
@@ -840,7 +1127,7 @@ function AddBlockForm({
 
       <div className="flex justify-end pt-1">
         <Button type="button" onClick={submit} disabled={pending} className="w-full sm:w-auto">
-          {pending ? "Adicionando…" : "Adicionar bloco"}
+          {pending ? "Adicionando…" : isSimple ? (slots.length > 1 ? `Adicionar ${slots.length} exercícios` : "Adicionar exercício") : "Adicionar bloco"}
         </Button>
       </div>
     </div>
@@ -848,7 +1135,7 @@ function AddBlockForm({
 }
 
 function ExerciseSlotField({
-  index, slot, exerciseLibrary, onChange, onRemove, isTimeBased, showBaseFields,
+  index, slot, exerciseLibrary, onChange, onRemove, isTimeBased, showBaseFields, extra,
 }: {
   index: number;
   slot: SlotState;
@@ -857,6 +1144,7 @@ function ExerciseSlotField({
   onRemove?: () => void;
   isTimeBased: boolean;
   showBaseFields: boolean;
+  extra?: ReactNode;
 }) {
   const options: AutocompleteOption[] = useMemo(() => {
     const q = slot.search.trim().toLowerCase();
@@ -866,7 +1154,7 @@ function ExerciseSlotField({
       .slice(0, 30)
       .map((ex) => ({
         id: ex.id,
-        label: ex.name,
+        label: toDisplayText(ex.name),
         sublabel: MUSCLE_GROUP_LABEL[ex.muscleGroup as MuscleGroup] ?? ex.muscleGroupDetail ?? "",
       }));
   }, [slot.search, exerciseLibrary]);
@@ -882,10 +1170,11 @@ function ExerciseSlotField({
         )}
       </div>
 
+      {extra}
       {slot.exerciseId ? (
         <div className="mb-2 flex items-center gap-2 rounded-[var(--radius)] bg-[var(--background)] p-2">
           <ExerciseThumb item={{ imageUrl: slot.imageUrl, name: slot.exerciseName }} />
-          <p className="truncate text-sm">{slot.exerciseName}</p>
+          <p className="truncate text-sm">{toDisplayText(slot.exerciseName)}</p>
           <button
             type="button"
             className="ml-auto shrink-0 text-xs text-[var(--primary)]"
@@ -912,7 +1201,7 @@ function ExerciseSlotField({
           {isTimeBased ? (
             <div>
               <Label className="text-xs">Segundos</Label>
-              <Input type="number" value={slot.holdSeconds} onChange={(e) => onChange({ holdSeconds: e.target.value })} className="h-9" />
+              <Input inputMode="numeric" value={slot.holdSeconds} onChange={(e) => onChange({ holdSeconds: sanitizeIntInput(e.target.value) })} className="h-9" />
             </div>
           ) : (
             <div>
@@ -929,8 +1218,8 @@ function ExerciseSlotField({
             <Input placeholder="2-0-2" value={slot.tempo} onChange={(e) => onChange({ tempo: e.target.value })} className="h-9" />
           </div>
           <div>
-            <Label className="text-xs">Obs.</Label>
-            <Input value={slot.notes} onChange={(e) => onChange({ notes: e.target.value })} className="h-9" />
+            <Label className="text-xs">Observação</Label>
+            <Input placeholder="Ex: cada perna" value={slot.notes} onChange={(e) => onChange({ notes: e.target.value })} className="h-9" />
           </div>
         </div>
       )}

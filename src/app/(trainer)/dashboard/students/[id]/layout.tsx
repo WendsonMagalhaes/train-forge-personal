@@ -3,6 +3,7 @@ import { students, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { toDisplayText } from "@/lib/text-case";
 import { StudentTabs } from "./tabs";
 import { getStudentEngagement } from "@/lib/actions/student-engagement";
 import { Flame, CalendarCheck, Target, Activity, AlertTriangle, ListChecks } from "lucide-react";
@@ -52,7 +53,7 @@ export default async function StudentLayout({
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="truncate font-display text-3xl">{row.name}</h1>
+          <h1 className="truncate font-display text-3xl">{toDisplayText(row.name)}</h1>
           <p className="truncate text-sm text-[var(--muted)]">{row.email}</p>
         </div>
         <Badge variant={statusLabel[row.status].variant}>{statusLabel[row.status].text}</Badge>

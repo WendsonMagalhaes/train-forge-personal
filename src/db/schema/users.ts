@@ -15,6 +15,12 @@ export const users = pgTable("users", {
   // true logo após cadastro (senha provisória) ou reset de senha pelo admin —
   // força a tela de troca de senha no próximo login antes de liberar o resto do sistema.
   mustChangePassword: boolean("must_change_password").notNull().default(false),
+  // Senha provisória guardada CIFRADA (AES-256-GCM, ver lib/crypto/provisional-password.ts)
+  // para o personal consultar e repassar ao aluno pelo WhatsApp enquanto ele não fez o primeiro acesso.
+  // Apagada assim que o usuário define a senha dele.
+  provisionalPasswordEnc: text("provisional_password_enc"),
+  // Momento em que o usuário concluiu o primeiro acesso (trocou a senha provisória).
+  firstAccessAt: timestamp("first_access_at"),
   // Cor de marca do personal (hex, ex: "#ff6a3d"). Usada para "pintar" todo o
   // sistema — dashboard do próprio personal E o portal dos alunos dele.
   // Null = usa o ember padrão do Train Forge.
