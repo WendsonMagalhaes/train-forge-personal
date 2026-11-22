@@ -12,7 +12,7 @@ export type ExternalExercise = {
   musculosSecundarios: string[];
 };
 
-export const EXTERNAL_EXERCISE_API_URL = "https://train-forge.vercel.app/api/exercicios";
+export const EXTERNAL_EXERCISE_API_URL = "https://api-train-forge.vercel.app/api/exercicios";
 
 /**
  * A API externa retorna nomes de grupo muscular bem granulares em português
