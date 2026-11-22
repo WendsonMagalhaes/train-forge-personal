@@ -4,7 +4,7 @@
 import { db } from "@/db";
 import { exercises, exerciseSubstitutes } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { eq, and, desc, ilike, or, sql, notInArray, inArray } from "drizzle-orm";
+import { eq, and, desc, ilike, or, sql, inArray } from "drizzle-orm";
 import { revalidatePath, unstable_cache } from "next/cache";
 import { MUSCLE_GROUPS, type MuscleGroup } from "@/lib/constants";
 import { fetchExternalExercises, mapToMuscleGroup } from "@/lib/exercise-api";
@@ -177,8 +177,6 @@ async function importExercisesForTrainer(trainerId: string) {
   const externalExercises = await fetchExternalExercises();
   if (externalExercises.length === 0) return { success: true, imported: 0 };
 
-  const externalIds = externalExercises.map((ex) => String(ex.id));
-
   let imported = 0;
   const batchSize = 50;
   for (let i = 0; i < externalExercises.length; i += batchSize) {
@@ -209,24 +207,12 @@ async function importExercisesForTrainer(trainerId: string) {
           muscleGroupDetail: sql`excluded.muscle_group_detail`,
           secondaryMuscles: sql`excluded.secondary_muscles`,
           category: sql`excluded.category`,
+          muscleGroup: sql`excluded.muscle_group`,
           movementPattern: sql`excluded.movement_pattern`,
         },
       });
     imported += batch.length;
   }
-
-  // remove da biblioteca do trainer os exercícios de origem "api" que não
-  // vieram mais na resposta atual (removidos/renomeados na fonte) —
-  // exercícios "custom" nunca são tocados aqui
-  await db
-    .delete(exercises)
-    .where(
-      and(
-        eq(exercises.trainerId, trainerId),
-        eq(exercises.source, "api"),
-        notInArray(exercises.externalId, externalIds)
-      )
-    );
 
   return { success: true, imported };
 }

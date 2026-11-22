@@ -22,8 +22,8 @@ export const EXTERNAL_EXERCISE_API_URL = "https://api-train-forge.vercel.app/api
 const MUSCLE_GROUP_KEYWORDS: Array<{ group: MuscleGroup; keywords: string[] }> = [
   { group: "chest", keywords: ["peito", "peitoral"] },
   { group: "back", keywords: ["costas", "dorsal", "lombar", "trapézio", "trapezio"] },
-  { group: "shoulders", keywords: ["ombro", "deltoide", "deltóide"] },
-  { group: "biceps", keywords: ["bíceps", "biceps"] },
+  { group: "shoulders", keywords: ["ombro", "deltoide", "deltóide", "pescoço", "pescoco"] },
+  { group: "biceps", keywords: ["bíceps", "biceps", "braços", "bracos", "antebraço", "antebraco"] },
   { group: "triceps", keywords: ["tríceps", "triceps"] },
   { group: "glutes", keywords: ["glúteo", "gluteo"] },
   { group: "legs", keywords: ["quadríceps", "quadriceps", "posterior de coxa", "panturrilha", "coxa", "quadril", "perna", "adutor", "abdutor"] },

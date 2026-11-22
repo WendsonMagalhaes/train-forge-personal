@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
-import { MUSCLE_GROUPS, MUSCLE_GROUP_LABEL, type MuscleGroup } from "@/lib/constants";
+import { MUSCLE_GROUP_LABEL, type MuscleGroup } from "@/lib/constants";
 import { DeleteExerciseButton } from "./delete-button";
 import { ManageSubstitutesButton } from "./manage-substitutes-button";
 import { Dumbbell, Search } from "lucide-react";
@@ -36,7 +36,14 @@ export function ExercisesExplorer({
   substituteIdsByExercise?: Record<string, string[]>;
 }) {
   const [query, setQuery] = useState("");
-  const [muscleGroup, setMuscleGroup] = useState<MuscleGroup | "">("");
+  const [group, setGroup] = useState("");
+
+  // Filtro pelo grupo detalhado (ex.: "Glúteo médio", "Deltoide lateral"). Exercícios
+  // cadastrados à mão, sem detalhe, usam o nome do grupo amplo como fallback.
+  const groupOptions = useMemo(() => {
+    const set = new Set(items.map(groupKey));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [items]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -46,10 +53,10 @@ export function ExercisesExplorer({
         ex.name.toLowerCase().includes(q) ||
         (ex.muscleGroupDetail ?? "").toLowerCase().includes(q) ||
         (ex.equipment ?? "").toLowerCase().includes(q);
-      const matchesGroup = !muscleGroup || ex.muscleGroup === muscleGroup;
+      const matchesGroup = !group || groupKey(ex) === group;
       return matchesQuery && matchesGroup;
     });
-  }, [items, query, muscleGroup]);
+  }, [items, query, group]);
 
   return (
     <div>
@@ -64,13 +71,13 @@ export function ExercisesExplorer({
           />
         </div>
         <select
-          value={muscleGroup}
-          onChange={(e) => setMuscleGroup(e.target.value as MuscleGroup | "")}
+          value={group}
+          onChange={(e) => setGroup(e.target.value)}
           className="h-10 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none focus-visible:border-[var(--tf-ember)] sm:w-56"
         >
           <option value="">Todos os grupos musculares</option>
-          {MUSCLE_GROUPS.map((g) => (
-            <option key={g} value={g}>{MUSCLE_GROUP_LABEL[g]}</option>
+          {groupOptions.map((g) => (
+            <option key={g} value={g}>{toDisplayText(g)}</option>
           ))}
         </select>
       </div>
@@ -99,6 +106,12 @@ export function ExercisesExplorer({
   );
 }
 
+/** Chave do filtro: grupo detalhado da origem; se não houver, o nome do grupo amplo. */
+function groupKey(ex: Exercise): string {
+  const detail = ex.muscleGroupDetail?.trim();
+  return detail || MUSCLE_GROUP_LABEL[ex.muscleGroup as MuscleGroup] || ex.muscleGroup;
+}
+
 function ExerciseCard({
   exercise: ex,
   allExercises,
@@ -110,7 +123,7 @@ function ExerciseCard({
 }) {
   return (
     <Dialog
-      title={ex.name}
+      title={toDisplayText(ex.name)}
       description={MUSCLE_GROUP_LABEL[ex.muscleGroup as MuscleGroup]}
       trigger={
         <Panel className="flex cursor-pointer flex-col gap-3 transition-colors hover:border-[var(--tf-ember)]">
@@ -128,7 +141,7 @@ function ExerciseCard({
                 />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={ex.imageUrl ?? ex.videoUrl ?? ""} alt={ex.name} className="h-16 w-16 shrink-0 rounded-[var(--radius)] object-cover" />
+                <img src={ex.imageUrl ?? ex.videoUrl ?? ""} alt={toDisplayText(ex.name)} className="h-16 w-16 shrink-0 rounded-[var(--radius)] object-cover" />
               )
             ) : (
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[var(--background)]">
@@ -137,7 +150,7 @@ function ExerciseCard({
             )}
 
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">{ex.name}</p>
+              <p className="truncate font-medium">{toDisplayText(ex.name)}</p>
               <div className="mt-1 flex flex-wrap gap-1">
                 <Badge variant="outline">{MUSCLE_GROUP_LABEL[ex.muscleGroup as MuscleGroup]}</Badge>
                 {ex.source === "api" && <Badge variant="secondary">API</Badge>}
@@ -202,7 +215,7 @@ function ExerciseDetail({ exercise: ex, substitutes }: { exercise: Exercise; sub
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={ex.imageUrl ?? ex.videoUrl ?? ""} alt={ex.name} className="w-full object-contain" />
+            <img src={ex.imageUrl ?? ex.videoUrl ?? ""} alt={toDisplayText(ex.name)} className="w-full object-contain" />
           )}
         </div>
       )}
@@ -216,7 +229,7 @@ function ExerciseDetail({ exercise: ex, substitutes }: { exercise: Exercise; sub
         {ex.muscleGroupDetail && (
           <div>
             <dt className="text-xs text-[var(--muted)]">Músculo principal</dt>
-            <dd>{ex.muscleGroupDetail}</dd>
+            <dd>{toDisplayText(ex.muscleGroupDetail)}</dd>
           </div>
         )}
         {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
@@ -254,13 +267,13 @@ function ExerciseDetail({ exercise: ex, substitutes }: { exercise: Exercise; sub
               <div key={sub.id} className="flex items-center gap-2 rounded-[var(--radius)] bg-[var(--background)] p-2 text-sm">
                 {sub.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={sub.imageUrl} alt={sub.name} className="h-8 w-8 shrink-0 rounded-[var(--radius)] object-cover" />
+                  <img src={sub.imageUrl} alt={toDisplayText(sub.name)} className="h-8 w-8 shrink-0 rounded-[var(--radius)] object-cover" />
                 ) : (
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[var(--surface)]">
                     <Dumbbell className="h-3.5 w-3.5 text-[var(--muted)]" />
                   </span>
                 )}
-                <span className="truncate">{sub.name}</span>
+                <span className="truncate">{toDisplayText(sub.name)}</span>
               </div>
             ))}
           </div>
