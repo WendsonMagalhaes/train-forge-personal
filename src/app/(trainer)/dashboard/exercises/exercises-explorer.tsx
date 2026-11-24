@@ -1,6 +1,6 @@
-import { ptTerm } from "@/lib/i18n/exercise-terms";
 // app/(trainer)/dashboard/exercises/exercises-explorer.tsx
 "use client";
+import { ptTerm } from "@/lib/i18n/exercise-terms";
 
 import { toDisplayText } from "@/lib/text-case";
 import { useMemo, useState } from "react";
