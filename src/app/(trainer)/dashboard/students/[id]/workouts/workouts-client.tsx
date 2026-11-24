@@ -1,4 +1,5 @@
 "use client";
+import { ptTerm } from "@/lib/i18n/exercise-terms";
 import { sanitizeDecimalInput, sanitizeIntInput } from "@/lib/numbers";
 import { toDisplayText } from "@/lib/text-case";
 import { NumberInput } from "@/components/ui/number-input";
@@ -1175,7 +1176,7 @@ function ExerciseSlotField({
       .map((ex) => ({
         id: ex.id,
         label: toDisplayText(ex.name),
-        sublabel: MUSCLE_GROUP_LABEL[ex.muscleGroup as MuscleGroup] ?? ex.muscleGroupDetail ?? "",
+        sublabel: MUSCLE_GROUP_LABEL[ex.muscleGroup as MuscleGroup] ?? ptTerm(ex.muscleGroupDetail) ?? "",
       }));
   }, [slot.search, exerciseLibrary]);
 

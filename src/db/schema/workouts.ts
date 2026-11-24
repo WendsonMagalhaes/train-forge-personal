@@ -43,6 +43,8 @@ export const exercises = pgTable("exercises", {
   videoUrl: text("video_url"), // gif/vídeo de execução
   imageUrl: text("image_url"),
   instructions: text("instructions"),
+  // Versão traduzida para português das instruções (preenchida pela tradução automática)
+  instructionsPt: text("instructions_pt"),
   source: text("source").default("custom").notNull(), // "custom" | "api"
   externalId: text("external_id"), // id na API de origem, usado pra evitar duplicar na importação
   createdAt: timestamp("created_at").defaultNow().notNull(),

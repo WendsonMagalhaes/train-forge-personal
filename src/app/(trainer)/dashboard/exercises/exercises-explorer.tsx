@@ -1,3 +1,4 @@
+import { ptTerm } from "@/lib/i18n/exercise-terms";
 // app/(trainer)/dashboard/exercises/exercises-explorer.tsx
 "use client";
 
@@ -24,6 +25,7 @@ type Exercise = {
   videoUrl: string | null;
   imageUrl: string | null;
   instructions: string | null;
+  instructionsPt: string | null;
   source: string;
 };
 
@@ -108,7 +110,7 @@ export function ExercisesExplorer({
 
 /** Chave do filtro: grupo detalhado da origem; se não houver, o nome do grupo amplo. */
 function groupKey(ex: Exercise): string {
-  const detail = ex.muscleGroupDetail?.trim();
+  const detail = ptTerm(ex.muscleGroupDetail)?.trim();
   return detail || MUSCLE_GROUP_LABEL[ex.muscleGroup as MuscleGroup] || ex.muscleGroup;
 }
 
@@ -175,11 +177,11 @@ function ExerciseCard({
           </div>
 
           <div className="flex flex-col gap-1 text-xs text-[var(--muted)]">
-            {ex.muscleGroupDetail && <p>Músculo principal: {toDisplayText(ex.muscleGroupDetail)}</p>}
+            {ex.muscleGroupDetail && <p>Músculo principal: {toDisplayText(ptTerm(ex.muscleGroupDetail))}</p>}
             {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
-              <p>Secundários: {ex.secondaryMuscles.map((m) => toDisplayText(m)).join(", ")}</p>
+              <p>Secundários: {ex.secondaryMuscles.map((m) => toDisplayText(ptTerm(m))).join(", ")}</p>
             )}
-            {ex.movementPattern && <p>Padrão de movimento: {toDisplayText(ex.movementPattern)}</p>}
+            {ex.movementPattern && <p>Padrão de movimento: {toDisplayText(ptTerm(ex.movementPattern))}</p>}
             {ex.equipment && <p>Equipamento: {toDisplayText(ex.equipment)}</p>}
           </div>
 
@@ -229,19 +231,19 @@ function ExerciseDetail({ exercise: ex, substitutes }: { exercise: Exercise; sub
         {ex.muscleGroupDetail && (
           <div>
             <dt className="text-xs text-[var(--muted)]">Músculo principal</dt>
-            <dd>{toDisplayText(ex.muscleGroupDetail)}</dd>
+            <dd>{toDisplayText(ptTerm(ex.muscleGroupDetail))}</dd>
           </div>
         )}
         {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
           <div>
             <dt className="text-xs text-[var(--muted)]">Músculos secundários</dt>
-            <dd>{ex.secondaryMuscles.map((m) => toDisplayText(m)).join(", ")}</dd>
+            <dd>{ex.secondaryMuscles.map((m) => toDisplayText(ptTerm(m))).join(", ")}</dd>
           </div>
         )}
         {ex.movementPattern && (
           <div>
             <dt className="text-xs text-[var(--muted)]">Padrão de movimento</dt>
-            <dd>{toDisplayText(ex.movementPattern)}</dd>
+            <dd>{toDisplayText(ptTerm(ex.movementPattern))}</dd>
           </div>
         )}
         {ex.equipment && (
@@ -252,10 +254,10 @@ function ExerciseDetail({ exercise: ex, substitutes }: { exercise: Exercise; sub
         )}
       </dl>
 
-      {ex.instructions && (
+      {(ex.instructionsPt ?? ex.instructions) && (
         <div>
           <p className="mb-1 text-xs text-[var(--muted)]">Instruções</p>
-          <p className="whitespace-pre-line text-sm">{ex.instructions}</p>
+          <p className="whitespace-pre-line text-sm">{(ex.instructionsPt ?? ex.instructions)}</p>
         </div>
       )}
 

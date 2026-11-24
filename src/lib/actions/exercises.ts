@@ -8,6 +8,7 @@ import { eq, and, desc, ilike, or, sql, inArray } from "drizzle-orm";
 import { revalidatePath, unstable_cache } from "next/cache";
 import { MUSCLE_GROUPS, type MuscleGroup } from "@/lib/constants";
 import { fetchExternalExercises, mapToMuscleGroup } from "@/lib/exercise-api";
+import { translatePendingInstructions } from "@/lib/i18n/translate";
 import { z } from "zod";
 
 const exerciseSchema = z.object({
@@ -204,6 +205,8 @@ async function importExercisesForTrainer(trainerId: string) {
           name: sql`excluded.name`,
           videoUrl: sql`excluded.video_url`,
           instructions: sql`excluded.instructions`,
+          // Só zera a tradução quando o texto original mudou
+          instructionsPt: sql`CASE WHEN ${exercises.instructions} IS DISTINCT FROM excluded.instructions THEN NULL ELSE ${exercises.instructionsPt} END`,
           muscleGroupDetail: sql`excluded.muscle_group_detail`,
           secondaryMuscles: sql`excluded.secondary_muscles`,
           category: sql`excluded.category`,
@@ -212,6 +215,12 @@ async function importExercisesForTrainer(trainerId: string) {
         },
       });
     imported += batch.length;
+  }
+
+  try {
+    await translatePendingInstructions({ trainerId, limit: 200 });
+  } catch (err) {
+    console.error("Tradução das instruções falhou:", err);
   }
 
   return { success: true, imported };

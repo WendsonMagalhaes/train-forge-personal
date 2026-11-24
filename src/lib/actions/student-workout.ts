@@ -98,7 +98,7 @@ async function loadPlanBlocks(studentId: string, planId: string) {
       muscleGroupDetail: exercises.muscleGroupDetail,
       secondaryMuscles: exercises.secondaryMuscles,
       equipment: exercises.equipment,
-      instructions: exercises.instructions,
+      instructions: sql<string | null>`coalesce(${exercises.instructionsPt}, ${exercises.instructions})`,
     })
     .from(workoutBlockExercises)
     .innerJoin(exercises, eq(exercises.id, workoutBlockExercises.exerciseId))

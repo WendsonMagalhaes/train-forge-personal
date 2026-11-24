@@ -1,4 +1,5 @@
 "use client";
+import { ptTerm } from "@/lib/i18n/exercise-terms";
 
 import { toDisplayText } from "@/lib/text-case";
 import { useState } from "react";
@@ -123,8 +124,8 @@ function ExerciseHowToContent({ item }: { item: ExerciseInfo }) {
 
       <div className="flex flex-wrap gap-1.5">
         <Badge variant="outline">{MUSCLE_GROUP_LABEL[item.muscleGroup as keyof typeof MUSCLE_GROUP_LABEL] ?? item.muscleGroup}</Badge>
-        {item.muscleGroupDetail && <Badge variant="outline">{toDisplayText(item.muscleGroupDetail)}</Badge>}
-        {item.secondaryMuscles?.map((m) => <Badge key={m} variant="secondary">{toDisplayText(m)}</Badge>)}
+        {item.muscleGroupDetail && <Badge variant="outline">{toDisplayText(ptTerm(item.muscleGroupDetail))}</Badge>}
+        {item.secondaryMuscles?.map((m) => <Badge key={m} variant="secondary">{toDisplayText(ptTerm(m))}</Badge>)}
         {item.equipment && <Badge variant="secondary">{toDisplayText(item.equipment)}</Badge>}
       </div>
 
