@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
@@ -10,6 +10,12 @@ const SIZE_CLASS = {
   lg: "sm:max-w-3xl",
   xl: "sm:max-w-5xl",
 } as const;
+
+// Variáveis de marca definidas no layout do personal (buildBrandStyle).
+// O modal é renderizado num portal dentro do <body>, fora do wrapper que
+// define essas variáveis, então elas precisam ser copiadas pra cá. Sem isso,
+// botões e destaques do modal caem na cor padrão do :root.
+const BRAND_VARS = ["--primary", "--primary-foreground", "--tf-ember", "--tf-ember-dim"] as const;
 
 export function Dialog({
   trigger,
@@ -30,6 +36,8 @@ export function Dialog({
   size?: keyof typeof SIZE_CLASS;
 }) {
   const [internalOpen, setInternalOpen] = useState(false);
+  const [brandStyle, setBrandStyle] = useState<CSSProperties>({});
+  const anchorRef = useRef<HTMLSpanElement>(null);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
 
@@ -37,6 +45,19 @@ export function Dialog({
     if (!isControlled) setInternalOpen(value);
     onOpenChange?.(value);
   }
+
+  // Lê a marca do ponto onde o modal foi chamado (dentro do wrapper de marca)
+  // antes da primeira pintura, e repassa pro portal.
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current) return;
+    const computed = getComputedStyle(anchorRef.current);
+    const next: Record<string, string> = {};
+    for (const name of BRAND_VARS) {
+      const value = computed.getPropertyValue(name).trim();
+      if (value) next[name] = value;
+    }
+    setBrandStyle(next as CSSProperties);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -54,13 +75,19 @@ export function Dialog({
 
   return (
     <>
+      <span ref={anchorRef} aria-hidden="true" className="contents" />
       {trigger && (
         <span onClick={() => setOpen(true)} className="contents">
           {trigger}
         </span>
       )}
       {open && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+        <div
+          style={brandStyle}
+          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+        >
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
             className={`relative z-10 max-h-[90dvh] w-full overflow-y-auto rounded-t-[16px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:rounded-[var(--radius)] ${SIZE_CLASS[size]}`}
